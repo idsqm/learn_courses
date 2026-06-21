@@ -1,0 +1,31 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${SERVER_PORT:-8081}:8081"
+    environment:
+      SERVER_PORT: "8081"
+      DB_URL: postgres://${POSTGRES_USER:-courses}:${POSTGRES_PASSWORD:-courses}@postgres:5432/${POSTGRES_DB:-courses}?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-courses}
+      POSTGRES_USER: ${POSTGRES_USER:-courses}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-courses}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-courses}"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
