@@ -1,15 +1,34 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      target: runner
     ports:
       - "${SERVER_PORT:-8081}:8081"
     environment:
-      SERVER_PORT: "8081"
+      SERVER_PORT: ${SERVER_PORT:-8081}
       DB_URL: postgres://${POSTGRES_USER:-courses}:${POSTGRES_PASSWORD:-courses}@postgres:5432/${POSTGRES_DB:-courses}?sslmode=disable
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
     depends_on:
       postgres:
         condition: service_healthy
+
+  dev:
+    build:
+      context: .
+      target: builder
+    working_dir: /app
+    volumes:
+      - .:/app
+      - gomodcache:/go/pkg/mod
+    environment:
+      DB_URL: postgres://${POSTGRES_USER:-courses}:${POSTGRES_PASSWORD:-courses}@postgres:5432/${POSTGRES_DB:-courses}?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - tools
 
   postgres:
     image: postgres:16-alpine
@@ -23,9 +42,10 @@ services:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-courses}"]
-      interval: 2s
+      interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 5
 
 volumes:
   pgdata:
+  gomodcache:

@@ -1,15 +1,30 @@
-.PHONY: run build test docker-up docker-down migrate-up migrate-down migrate-create
+.PHONY: run build test migrate-up migrate-down migrate-create docker-up docker-down \
+	prod-up prod-down prod-build prod-migrate-up prod-migrate-down
 
-DB_URL ?= postgres://courses:courses@localhost:5433/courses?sslmode=disable
+include .env
+export
+
+DEV=docker compose --profile tools run --rm dev
+GOOSE=$(DEV) go run github.com/pressly/goose/v3/cmd/goose@latest
+DB_URL_DOCKER=postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)?sslmode=disable
 
 run:
-	docker compose up --build
+	docker compose up -d --build --force-recreate
 
 build:
 	docker compose build
 
 test:
-	go test ./...
+	$(DEV) go test ./... -v -count=1
+
+migrate-up:
+	$(GOOSE) -dir migrations postgres "$(DB_URL_DOCKER)" up
+
+migrate-down:
+	$(GOOSE) -dir migrations postgres "$(DB_URL_DOCKER)" down
+
+migrate-create:
+	$(GOOSE) -dir migrations create $(name) sql
 
 docker-up:
 	docker compose up -d
@@ -17,11 +32,19 @@ docker-up:
 docker-down:
 	docker compose down
 
-migrate-up:
-	goose -dir migrations postgres "$(DB_URL)" up
+PROD=docker compose -f docker-compose.prod.yml
 
-migrate-down:
-	goose -dir migrations postgres "$(DB_URL)" down
+prod-up:
+	$(PROD) up -d --build
 
-migrate-create:
-	goose -dir migrations create $(name) sql
+prod-down:
+	$(PROD) down
+
+prod-build:
+	$(PROD) build
+
+prod-migrate-up:
+	$(PROD) run --rm app goose -dir /migrations postgres "$(DB_URL_DOCKER)" up
+
+prod-migrate-down:
+	$(PROD) run --rm app goose -dir /migrations postgres "$(DB_URL_DOCKER)" down
