@@ -7,7 +7,7 @@ services:
       - "${SERVER_PORT:-8081}:8081"
     environment:
       SERVER_PORT: ${SERVER_PORT:-8081}
-      DB_URL: postgres://${POSTGRES_USER:-courses}:${POSTGRES_PASSWORD:-courses}@postgres:5432/${POSTGRES_DB:-courses}?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER:-courses}:${POSTGRES_PASSWORD:-courses}@postgres:5432/${POSTGRES_DB:-courses}?sslmode=disable
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
     depends_on:
       postgres:
@@ -22,7 +22,7 @@ services:
       - .:/app
       - gomodcache:/go/pkg/mod
     environment:
-      DB_URL: postgres://${POSTGRES_USER:-courses}:${POSTGRES_PASSWORD:-courses}@postgres:5432/${POSTGRES_DB:-courses}?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER:-courses}:${POSTGRES_PASSWORD:-courses}@postgres:5432/${POSTGRES_DB:-courses}?sslmode=disable
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
     depends_on:
       postgres:

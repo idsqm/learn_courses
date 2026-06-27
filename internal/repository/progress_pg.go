@@ -89,9 +89,9 @@ func (r *progressRepo) GetUserStats(ctx context.Context, userID string) (*domain
 			 AND (SELECT COUNT(*) FROM lessons WHERE course_id = en.course_id) >
 			     (SELECT COUNT(*) FROM lesson_progress WHERE user_id = $1 AND course_id = en.course_id)
 			)::int,
-			(SELECT COALESCE(SUM(l.duration_minutes), 0) FROM lesson_progress lp
-			 JOIN lessons l ON l.id = lp.lesson_id
-			 WHERE lp.user_id = $1
+			(SELECT COALESCE(SUM(l.duration_minutes), 0) FROM enrollments en2
+			 JOIN lessons l ON l.course_id = en2.course_id
+			 WHERE en2.user_id = $1
 			)::int,
 			(SELECT COUNT(*) FROM certificates WHERE user_id = $1)::int
 	`, userID).Scan(&stats.CoursesInProgress, &stats.TotalStudyTime, &stats.CertificatesCount)

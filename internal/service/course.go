@@ -41,5 +41,5 @@ func (s *courseService) GetFeatured(ctx context.Context) ([]domain.CourseListIte
 }
 
 func (s *courseService) GetRecommended(ctx context.Context, userID string) ([]domain.CourseListItem, error) {
-	return s.courses.GetRecommended(ctx, userID, 8)
+	return s.courses.GetRecommended(ctx, userID, 4)
 }

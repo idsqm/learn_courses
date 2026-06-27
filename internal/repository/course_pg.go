@@ -27,6 +27,23 @@ func NewCourseRepository(pool *pgxpool.Pool) CourseRepository {
 	return &courseRepo{pool: pool}
 }
 
+const courseListSelect = `
+	SELECT
+		c.id, c.title, a.name, a.initials,
+		cat.name, c.level, c.price, c.old_price,
+		COALESCE(sub_rv.avg_rating, 0)::float,
+		COALESCE(sub_rv.cnt, 0)::int,
+		COALESCE(sub_e.cnt, 0)::int,
+		(COALESCE(sub_l.total_dur, 0) / 60)::int,
+		COALESCE(sub_l.cnt, 0)::int,
+		c.color_1, c.color_2, c.tag
+	FROM courses c
+	JOIN authors a ON c.author_id = a.id
+	JOIN categories cat ON c.category_id = cat.id
+	LEFT JOIN LATERAL (SELECT AVG(rating) AS avg_rating, COUNT(*) AS cnt FROM reviews WHERE course_id = c.id) sub_rv ON true
+	LEFT JOIN LATERAL (SELECT COUNT(*) AS cnt FROM enrollments WHERE course_id = c.id) sub_e ON true
+	LEFT JOIN LATERAL (SELECT SUM(duration_minutes) AS total_dur, COUNT(*) AS cnt FROM lessons WHERE course_id = c.id) sub_l ON true`
+
 func (r *courseRepo) List(ctx context.Context, f domain.CourseFilter) ([]domain.CourseListItem, int, error) {
 	where := []string{"c.published = true"}
 	args := []any{}
@@ -57,20 +74,18 @@ func (r *courseRepo) List(ctx context.Context, f domain.CourseFilter) ([]domain.
 		args = append(args, "%"+f.Search+"%")
 		argIdx++
 	}
-
-	whereClause := strings.Join(where, " AND ")
-
-	havingClause := ""
 	if f.RatingMin != nil {
-		havingClause = fmt.Sprintf("HAVING COALESCE(AVG(rv.rating), 0) >= $%d", argIdx)
+		where = append(where, fmt.Sprintf("COALESCE(sub_rv.avg_rating, 0) >= $%d", argIdx))
 		args = append(args, *f.RatingMin)
 		argIdx++
 	}
 
+	whereClause := strings.Join(where, " AND ")
+
 	orderBy := "c.created_at DESC"
 	switch f.Sort {
 	case "popular", "популярные":
-		orderBy = "COUNT(DISTINCT e.id) DESC"
+		orderBy = "COALESCE(sub_e.cnt, 0) DESC"
 	case "new", "новые":
 		orderBy = "c.created_at DESC"
 	case "price_asc", "по цене":
@@ -78,29 +93,10 @@ func (r *courseRepo) List(ctx context.Context, f domain.CourseFilter) ([]domain.
 	case "price_desc":
 		orderBy = "c.price DESC"
 	case "rating", "по рейтингу":
-		orderBy = "COALESCE(AVG(rv.rating), 0) DESC"
+		orderBy = "COALESCE(sub_rv.avg_rating, 0) DESC"
 	}
 
-	baseQuery := fmt.Sprintf(`
-		SELECT
-			c.id, c.title, a.name AS author, a.initials,
-			cat.name AS category, c.level, c.price, c.old_price,
-			COALESCE(AVG(rv.rating), 0)::float AS rating,
-			COUNT(DISTINCT rv.id)::int AS reviews_count,
-			COUNT(DISTINCT e.id)::int AS students_count,
-			(COALESCE(SUM(DISTINCT l.duration_minutes), 0) / 60)::int AS hours,
-			COUNT(DISTINCT l.id)::int AS lessons_count,
-			c.color_1, c.color_2, c.tag
-		FROM courses c
-		JOIN authors a ON c.author_id = a.id
-		JOIN categories cat ON c.category_id = cat.id
-		LEFT JOIN reviews rv ON rv.course_id = c.id
-		LEFT JOIN enrollments e ON e.course_id = c.id
-		LEFT JOIN lessons l ON l.course_id = c.id
-		WHERE %s
-		GROUP BY c.id, a.name, a.initials, cat.name
-		%s
-	`, whereClause, havingClause)
+	baseQuery := fmt.Sprintf("%s\n\tWHERE %s", courseListSelect, whereClause)
 
 	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM (%s) sub", baseQuery)
 	var total int
@@ -130,7 +126,7 @@ func (r *courseRepo) GetByID(ctx context.Context, id string) (*domain.CourseDeta
 	var authorID string
 	err := r.pool.QueryRow(ctx, `
 		SELECT
-			c.id, c.title, c.description, cat.name AS category,
+			c.id, c.title, c.description, cat.name,
 			c.level, c.price, c.old_price,
 			COALESCE(sub_rv.avg_rating, 0)::float,
 			COALESCE(sub_rv.cnt, 0)::int,
@@ -192,30 +188,14 @@ func (r *courseRepo) GetByID(ctx context.Context, id string) (*domain.CourseDeta
 }
 
 func (r *courseRepo) GetFeatured(ctx context.Context, limit int) ([]domain.CourseListItem, error) {
-	return r.listByOrder(ctx, "COUNT(DISTINCT e.id) DESC, COALESCE(AVG(rv.rating), 0) DESC", limit)
+	return r.listByOrder(ctx, "COALESCE(sub_e.cnt, 0) DESC, COALESCE(sub_rv.avg_rating, 0) DESC", limit)
 }
 
 func (r *courseRepo) GetRecommended(ctx context.Context, userID string, limit int) ([]domain.CourseListItem, error) {
-	rows, err := r.pool.Query(ctx, `
-		SELECT
-			c.id, c.title, a.name, a.initials,
-			cat.name, c.level, c.price, c.old_price,
-			COALESCE(AVG(rv.rating), 0)::float,
-			COUNT(DISTINCT rv.id)::int,
-			COUNT(DISTINCT e.id)::int,
-			(COALESCE(SUM(DISTINCT l.duration_minutes), 0) / 60)::int,
-			COUNT(DISTINCT l.id)::int,
-			c.color_1, c.color_2, c.tag
-		FROM courses c
-		JOIN authors a ON c.author_id = a.id
-		JOIN categories cat ON c.category_id = cat.id
-		LEFT JOIN reviews rv ON rv.course_id = c.id
-		LEFT JOIN enrollments e ON e.course_id = c.id
-		LEFT JOIN lessons l ON l.course_id = c.id
+	rows, err := r.pool.Query(ctx, courseListSelect+`
 		WHERE c.published = true
 			AND c.id NOT IN (SELECT course_id FROM enrollments WHERE user_id = $1)
-		GROUP BY c.id, a.name, a.initials, cat.name
-		ORDER BY COALESCE(AVG(rv.rating), 0) DESC, COUNT(DISTINCT e.id) DESC
+		ORDER BY COALESCE(sub_rv.avg_rating, 0) DESC, COALESCE(sub_e.cnt, 0) DESC
 		LIMIT $2
 	`, userID, limit)
 	if err != nil {
@@ -231,27 +211,7 @@ func (r *courseRepo) Exists(ctx context.Context, id string) (bool, error) {
 }
 
 func (r *courseRepo) listByOrder(ctx context.Context, order string, limit int) ([]domain.CourseListItem, error) {
-	query := fmt.Sprintf(`
-		SELECT
-			c.id, c.title, a.name, a.initials,
-			cat.name, c.level, c.price, c.old_price,
-			COALESCE(AVG(rv.rating), 0)::float,
-			COUNT(DISTINCT rv.id)::int,
-			COUNT(DISTINCT e.id)::int,
-			(COALESCE(SUM(DISTINCT l.duration_minutes), 0) / 60)::int,
-			COUNT(DISTINCT l.id)::int,
-			c.color_1, c.color_2, c.tag
-		FROM courses c
-		JOIN authors a ON c.author_id = a.id
-		JOIN categories cat ON c.category_id = cat.id
-		LEFT JOIN reviews rv ON rv.course_id = c.id
-		LEFT JOIN enrollments e ON e.course_id = c.id
-		LEFT JOIN lessons l ON l.course_id = c.id
-		WHERE c.published = true
-		GROUP BY c.id, a.name, a.initials, cat.name
-		ORDER BY %s
-		LIMIT $1
-	`, order)
+	query := fmt.Sprintf("%s\n\tWHERE c.published = true\n\tORDER BY %s\n\tLIMIT $1", courseListSelect, order)
 
 	rows, err := r.pool.Query(ctx, query, limit)
 	if err != nil {

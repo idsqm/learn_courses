@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	ServerPort string `env:"SERVER_PORT,default=8081"`
-	DBURL      string `env:"DB_URL,required"`
+	DBURL      string `env:"DATABASE_URL,required"`
 	JWTSecret  string `env:"JWT_SECRET,required"`
 }
 
