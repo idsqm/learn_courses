@@ -66,14 +66,14 @@ func (r *studioRepo) ListCourses(ctx context.Context, authorID string) ([]domain
 			c.id, c.title, cat.name,
 			COALESCE(sub_l.cnt, 0)::int,
 			COALESCE(sub_e.cnt, 0)::int,
-			COALESCE(sub_e30.revenue, 0)::float,
+			(COALESCE(sub_e30.cnt, 0) * c.price)::float,
 			CASE WHEN c.published THEN 'published' ELSE 'draft' END
 		FROM courses c
 		JOIN categories cat ON c.category_id = cat.id
 		LEFT JOIN LATERAL (SELECT COUNT(*) AS cnt FROM lessons WHERE course_id = c.id) sub_l ON true
 		LEFT JOIN LATERAL (SELECT COUNT(*) AS cnt FROM enrollments WHERE course_id = c.id) sub_e ON true
 		LEFT JOIN LATERAL (
-			SELECT SUM(c.price) AS revenue
+			SELECT COUNT(*) AS cnt
 			FROM enrollments WHERE course_id = c.id AND created_at >= NOW() - INTERVAL '30 days'
 		) sub_e30 ON true
 		WHERE c.author_id = $1
