@@ -646,6 +646,31 @@ paths:
           $ref: "#/components/responses/ValidationError"
 
   /api/v1/studio/courses/{id}:
+    get:
+      summary: Get full course data for editing
+      operationId: studioGetCourse
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      responses:
+        "200":
+          description: Course details for editing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudioCourseDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Course not found or not owned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
     put:
       summary: Update a course
       operationId: studioUpdateCourse
@@ -1500,6 +1525,46 @@ components:
         status:
           type: string
           enum: [draft, published]
+
+    StudioCourseDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        subtitle:
+          type: string
+        description:
+          type: string
+        category_id:
+          type: integer
+        category:
+          type: string
+        level:
+          type: string
+          enum: [Любой, Новичкам, Продвинутый]
+        price:
+          type: number
+        old_price:
+          type: number
+          nullable: true
+        is_free:
+          type: boolean
+        color_1:
+          type: string
+        color_2:
+          type: string
+        tag:
+          type: string
+          nullable: true
+          enum: [Бестселлер, Новинка, Популярное]
+        published:
+          type: boolean
+        curriculum:
+          type: array
+          items:
+            $ref: "#/components/schemas/Module"
 
     CreateCourseRequest:
       type: object

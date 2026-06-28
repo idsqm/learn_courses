@@ -15,6 +15,7 @@ type StudioRepository interface {
 	GetAuthorByUserID(ctx context.Context, userID string) (int, error)
 
 	ListCourses(ctx context.Context, authorID int) ([]domain.StudioCourse, error)
+	GetCourse(ctx context.Context, authorID, courseID int) (*domain.StudioCourseDetail, error)
 	CreateCourse(ctx context.Context, authorID int, req domain.CreateCourseRequest) (int, error)
 	UpdateCourse(ctx context.Context, authorID, courseID int, req domain.UpdateCourseRequest) error
 	DeleteCourse(ctx context.Context, authorID, courseID int) error
@@ -96,6 +97,79 @@ func (r *studioRepo) ListCourses(ctx context.Context, authorID int) ([]domain.St
 		courses = []domain.StudioCourse{}
 	}
 	return courses, nil
+}
+
+func (r *studioRepo) GetCourse(ctx context.Context, authorID, courseID int) (*domain.StudioCourseDetail, error) {
+	var d domain.StudioCourseDetail
+	err := r.pool.QueryRow(ctx, `
+		SELECT c.id, c.title, c.subtitle, c.description,
+			c.category_id, cat.name, c.level, c.price, c.old_price,
+			c.is_free, c.color_1, c.color_2, c.tag, c.published
+		FROM courses c
+		JOIN categories cat ON c.category_id = cat.id
+		WHERE c.id = $1 AND c.author_id = $2
+	`, courseID, authorID).Scan(
+		&d.ID, &d.Title, &d.Subtitle, &d.Description,
+		&d.CategoryID, &d.Category, &d.Level, &d.Price, &d.OldPrice,
+		&d.IsFree, &d.Color1, &d.Color2, &d.Tag, &d.Published,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, domain.ErrCourseNotFound
+		}
+		return nil, err
+	}
+
+	moduleRows, err := r.pool.Query(ctx,
+		"SELECT id, title FROM course_modules WHERE course_id = $1 ORDER BY sort_order", courseID)
+	if err != nil {
+		return nil, err
+	}
+	defer moduleRows.Close()
+
+	type modRow struct{ id int; title string }
+	var mods []modRow
+	for moduleRows.Next() {
+		var m modRow
+		if err := moduleRows.Scan(&m.id, &m.title); err != nil {
+			return nil, err
+		}
+		mods = append(mods, m)
+	}
+
+	d.Curriculum = make([]domain.Module, 0, len(mods))
+	for _, m := range mods {
+		lessonRows, err := r.pool.Query(ctx,
+			"SELECT id, name, duration_minutes, is_free FROM lessons WHERE module_id = $1 ORDER BY sort_order", m.id)
+		if err != nil {
+			return nil, err
+		}
+		var lessons []domain.Lesson
+		var totalMin int
+		for lessonRows.Next() {
+			var l domain.Lesson
+			var dur int
+			if err := lessonRows.Scan(&l.ID, &l.Name, &dur, &l.IsFree); err != nil {
+				lessonRows.Close()
+				return nil, err
+			}
+			l.Duration = formatDuration(dur)
+			totalMin += dur
+			lessons = append(lessons, l)
+		}
+		lessonRows.Close()
+		if lessons == nil {
+			lessons = []domain.Lesson{}
+		}
+		d.Curriculum = append(d.Curriculum, domain.Module{
+			Title:        m.title,
+			Duration:     formatDuration(totalMin),
+			LessonsCount: len(lessons),
+			Lessons:      lessons,
+		})
+	}
+
+	return &d, nil
 }
 
 func (r *studioRepo) CreateCourse(ctx context.Context, authorID int, req domain.CreateCourseRequest) (int, error) {

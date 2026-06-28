@@ -89,6 +89,7 @@ func NewRouter(
 
 			r.Get("/courses", studio.ListCourses)
 			r.Post("/courses", studio.CreateCourse)
+			r.Get("/courses/{id}", studio.GetCourse)
 			r.Put("/courses/{id}", studio.UpdateCourse)
 			r.Delete("/courses/{id}", studio.DeleteCourse)
 			r.Post("/courses/{id}/publish", studio.PublishCourse)

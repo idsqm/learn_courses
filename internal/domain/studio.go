@@ -12,6 +12,24 @@ type StudioCourse struct {
 	Status        string  `json:"status"`
 }
 
+type StudioCourseDetail struct {
+	ID          int      `json:"id"`
+	Title       string   `json:"title"`
+	Subtitle    string   `json:"subtitle"`
+	Description string   `json:"description"`
+	CategoryID  int      `json:"category_id"`
+	Category    string   `json:"category"`
+	Level       string   `json:"level"`
+	Price       float64  `json:"price"`
+	OldPrice    *float64 `json:"old_price,omitempty"`
+	IsFree      bool     `json:"is_free"`
+	Color1      string   `json:"color_1"`
+	Color2      string   `json:"color_2"`
+	Tag         *string  `json:"tag,omitempty"`
+	Published   bool     `json:"published"`
+	Curriculum  []Module `json:"curriculum"`
+}
+
 type CreateCourseRequest struct {
 	Title       string   `json:"title"`
 	Subtitle    string   `json:"subtitle"`

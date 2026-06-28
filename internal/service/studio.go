@@ -11,6 +11,7 @@ type StudioService interface {
 	ResolveAuthor(ctx context.Context, userID string) (int, error)
 
 	ListCourses(ctx context.Context, authorID int) ([]domain.StudioCourse, error)
+	GetCourse(ctx context.Context, authorID, courseID int) (*domain.StudioCourseDetail, error)
 	CreateCourse(ctx context.Context, authorID int, req domain.CreateCourseRequest) (int, error)
 	UpdateCourse(ctx context.Context, authorID, courseID int, req domain.UpdateCourseRequest) error
 	DeleteCourse(ctx context.Context, authorID, courseID int) error
@@ -47,6 +48,10 @@ func (s *studioService) ResolveAuthor(ctx context.Context, userID string) (int, 
 
 func (s *studioService) ListCourses(ctx context.Context, authorID int) ([]domain.StudioCourse, error) {
 	return s.studio.ListCourses(ctx, authorID)
+}
+
+func (s *studioService) GetCourse(ctx context.Context, authorID, courseID int) (*domain.StudioCourseDetail, error) {
+	return s.studio.GetCourse(ctx, authorID, courseID)
 }
 
 func (s *studioService) CreateCourse(ctx context.Context, authorID int, req domain.CreateCourseRequest) (int, error) {

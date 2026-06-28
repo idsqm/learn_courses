@@ -28,6 +28,21 @@ func (h *StudioHandler) ListCourses(w http.ResponseWriter, r *http.Request) {
 	writeOK(w, map[string]any{"data": courses})
 }
 
+func (h *StudioHandler) GetCourse(w http.ResponseWriter, r *http.Request) {
+	authorID := AuthorIDFromContext(r.Context())
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
+	course, err := h.studio.GetCourse(r.Context(), authorID, courseID)
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	writeOK(w, course)
+}
+
 func (h *StudioHandler) CreateCourse(w http.ResponseWriter, r *http.Request) {
 	authorID := AuthorIDFromContext(r.Context())
 
