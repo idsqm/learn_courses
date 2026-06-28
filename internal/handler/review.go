@@ -26,7 +26,7 @@ func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	var req domain.CreateReviewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, domain.ErrValidation)
+		writeDecodeError(w, err)
 		return
 	}
 

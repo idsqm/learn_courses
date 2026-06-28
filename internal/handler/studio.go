@@ -48,7 +48,7 @@ func (h *StudioHandler) CreateCourse(w http.ResponseWriter, r *http.Request) {
 
 	var req domain.CreateCourseRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, domain.ErrValidation)
+		writeDecodeError(w, err)
 		return
 	}
 
@@ -86,7 +86,7 @@ func (h *StudioHandler) UpdateCourse(w http.ResponseWriter, r *http.Request) {
 
 	var req domain.UpdateCourseRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, domain.ErrValidation)
+		writeDecodeError(w, err)
 		return
 	}
 
@@ -154,7 +154,7 @@ func (h *StudioHandler) CreateModule(w http.ResponseWriter, r *http.Request) {
 
 	var req domain.CreateModuleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, domain.ErrValidation)
+		writeDecodeError(w, err)
 		return
 	}
 	if req.Title == "" {
@@ -187,7 +187,7 @@ func (h *StudioHandler) UpdateModule(w http.ResponseWriter, r *http.Request) {
 
 	var req domain.UpdateModuleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, domain.ErrValidation)
+		writeDecodeError(w, err)
 		return
 	}
 
@@ -235,7 +235,7 @@ func (h *StudioHandler) CreateLesson(w http.ResponseWriter, r *http.Request) {
 
 	var req domain.CreateLessonRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, domain.ErrValidation)
+		writeDecodeError(w, err)
 		return
 	}
 	if req.Name == "" {
@@ -268,7 +268,7 @@ func (h *StudioHandler) UpdateLesson(w http.ResponseWriter, r *http.Request) {
 
 	var req domain.UpdateLessonRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, domain.ErrValidation)
+		writeDecodeError(w, err)
 		return
 	}
 
@@ -365,7 +365,7 @@ func (h *StudioHandler) ReplyToReview(w http.ResponseWriter, r *http.Request) {
 		Reply string `json:"reply"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, domain.ErrValidation)
+		writeDecodeError(w, err)
 		return
 	}
 	if req.Reply == "" {

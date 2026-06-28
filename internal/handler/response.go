@@ -36,6 +36,12 @@ func intURLParam(r *http.Request, name string) (int, error) {
 	return strconv.Atoi(chi.URLParam(r, name))
 }
 
+func writeDecodeError(w http.ResponseWriter, err error) {
+	ve := domain.NewValidationErrors()
+	ve.Add("body", err.Error())
+	writeError(w, ve)
+}
+
 func writeError(w http.ResponseWriter, err error) {
 	var ve *domain.ValidationErrors
 	if errors.As(err, &ve) {
