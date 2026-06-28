@@ -9,6 +9,7 @@ services:
       SERVER_PORT: ${SERVER_PORT:-8081}
       DATABASE_URL: postgres://${POSTGRES_USER:-courses}:${POSTGRES_PASSWORD:-courses}@postgres:5432/${POSTGRES_DB:-courses}?sslmode=disable
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      DEBUG: ${DEBUG:-false}
     depends_on:
       postgres:
         condition: service_healthy

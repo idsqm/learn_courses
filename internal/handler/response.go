@@ -3,10 +3,21 @@ package handler
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/andruho/courses/internal/domain"
 )
+
+var (
+	logger   *slog.Logger = slog.Default()
+	debugMode bool
+)
+
+func SetLogger(l *slog.Logger, debug bool) {
+	logger = l
+	debugMode = debug
+}
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
@@ -35,10 +46,20 @@ func writeError(w http.ResponseWriter, err error) {
 		return
 	}
 
-	writeJSON(w, http.StatusInternalServerError, map[string]any{
+	logger.Error("internal error", "error", err.Error())
+
+	resp := map[string]any{
 		"error": map[string]string{
 			"code":    "INTERNAL_ERROR",
 			"message": "Internal server error",
 		},
-	})
+	}
+	if debugMode {
+		resp["error"] = map[string]string{
+			"code":    "INTERNAL_ERROR",
+			"message": err.Error(),
+		}
+	}
+
+	writeJSON(w, http.StatusInternalServerError, resp)
 }

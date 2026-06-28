@@ -1,0 +1,28 @@
+-- +goose Up
+
+ALTER TABLE courses ADD COLUMN IF NOT EXISTS subtitle VARCHAR(255) NOT NULL DEFAULT '';
+ALTER TABLE courses ADD COLUMN IF NOT EXISTS is_free BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE lessons ADD COLUMN IF NOT EXISTS type VARCHAR(20) NOT NULL DEFAULT 'video';
+
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reply TEXT;
+ALTER TABLE reviews ADD COLUMN IF NOT EXISTS replied_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS payouts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    author_id UUID NOT NULL REFERENCES authors(id),
+    amount NUMERIC(10,2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_payouts_author ON payouts(author_id);
+
+-- +goose Down
+DROP TABLE IF EXISTS payouts;
+ALTER TABLE reviews DROP COLUMN IF EXISTS reply;
+ALTER TABLE reviews DROP COLUMN IF EXISTS replied_at;
+ALTER TABLE lessons DROP COLUMN IF EXISTS type;
+ALTER TABLE courses DROP COLUMN IF EXISTS is_free;
+ALTER TABLE courses DROP COLUMN IF EXISTS subtitle;

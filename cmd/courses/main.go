@@ -19,13 +19,18 @@ import (
 )
 
 func main() {
-	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-
 	cfg, err := config.Load()
 	if err != nil {
-		log.Error("failed to load config", "error", err)
+		slog.Error("failed to load config", "error", err)
 		os.Exit(1)
 	}
+
+	logLevel := slog.LevelInfo
+	if cfg.Debug {
+		logLevel = slog.LevelDebug
+	}
+	log := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel}))
+	handler.SetLogger(log, cfg.Debug)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -51,6 +56,7 @@ func main() {
 	certificates := repository.NewCertificateRepository(pool)
 	authors := repository.NewAuthorRepository(pool)
 	progress := repository.NewProgressRepository(pool)
+	studioRepo := repository.NewStudioRepository(pool)
 
 	// Services
 	courseSvc := service.NewCourseService(courses)
@@ -61,12 +67,13 @@ func main() {
 	certificateSvc := service.NewCertificateService(certificates)
 	authorSvc := service.NewAuthorService(authors)
 	progressSvc := service.NewProgressService(progress, certificates, enrollments)
+	studioSvc := service.NewStudioService(studioRepo)
 
 	// Router
 	router := handler.NewRouter(
 		courseSvc, categorySvc, enrollmentSvc, favoriteSvc,
 		reviewSvc, certificateSvc, authorSvc, progressSvc,
-		cfg.JWTSecret,
+		studioSvc, cfg.JWTSecret,
 	)
 
 	srv := &http.Server{
@@ -128,12 +135,17 @@ func gooseUp(raw string) string {
 }
 
 func runMigrations(ctx context.Context, pool *pgxpool.Pool, log *slog.Logger) error {
-	sql, err := os.ReadFile("migrations/20260620001_init.sql")
-	if err != nil {
-		return err
-	}
-	if _, err := pool.Exec(ctx, gooseUp(string(sql))); err != nil {
-		return err
+	for _, path := range []string{
+		"migrations/20260620001_init.sql",
+		"migrations/20260620003_studio.sql",
+	} {
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		if _, err := pool.Exec(ctx, gooseUp(string(raw))); err != nil {
+			return err
+		}
 	}
 
 	seed, err := os.ReadFile("migrations/20260620002_seed.sql")

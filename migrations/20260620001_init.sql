@@ -135,15 +135,16 @@ CREATE INDEX IF NOT EXISTS idx_reviews_course ON reviews(course_id);
 CREATE INDEX IF NOT EXISTS idx_certificates_user ON certificates(user_id);
 
 -- +goose Down
-DROP TABLE IF EXISTS author_applications;
-DROP TABLE IF EXISTS certificates;
-DROP TABLE IF EXISTS favorites;
-DROP TABLE IF EXISTS lesson_progress;
-DROP TABLE IF EXISTS enrollments;
-DROP TABLE IF EXISTS lessons;
-DROP TABLE IF EXISTS course_modules;
-DROP TABLE IF EXISTS course_includes;
-DROP TABLE IF EXISTS course_learn_items;
-DROP TABLE IF EXISTS courses;
-DROP TABLE IF EXISTS authors;
-DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS author_applications CASCADE;
+DROP TABLE IF EXISTS certificates CASCADE;
+DROP TABLE IF EXISTS favorites CASCADE;
+DROP TABLE IF EXISTS lesson_progress CASCADE;
+DROP TABLE IF EXISTS enrollments CASCADE;
+DROP TABLE IF EXISTS reviews CASCADE;
+DROP TABLE IF EXISTS lessons CASCADE;
+DROP TABLE IF EXISTS course_modules CASCADE;
+DROP TABLE IF EXISTS course_includes CASCADE;
+DROP TABLE IF EXISTS course_learn_items CASCADE;
+DROP TABLE IF EXISTS courses CASCADE;
+DROP TABLE IF EXISTS authors CASCADE;
+DROP TABLE IF EXISTS categories CASCADE;

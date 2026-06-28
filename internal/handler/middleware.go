@@ -13,10 +13,37 @@ import (
 type ctxKey string
 
 const userIDKey ctxKey = "user_id"
+const authorIDKey ctxKey = "author_id"
 
 func UserIDFromContext(ctx context.Context) string {
 	v, _ := ctx.Value(userIDKey).(string)
 	return v
+}
+
+func AuthorIDFromContext(ctx context.Context) string {
+	v, _ := ctx.Value(authorIDKey).(string)
+	return v
+}
+
+type AuthorResolver func(ctx context.Context, userID string) (string, error)
+
+func AuthorMiddleware(resolve AuthorResolver) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			userID := UserIDFromContext(r.Context())
+			if userID == "" {
+				writeError(w, domain.ErrAccessTokenInvalid)
+				return
+			}
+			authorID, err := resolve(r.Context(), userID)
+			if err != nil {
+				writeError(w, err)
+				return
+			}
+			ctx := context.WithValue(r.Context(), authorIDKey, authorID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }
 
 func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {

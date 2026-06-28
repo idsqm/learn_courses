@@ -19,6 +19,7 @@ func NewRouter(
 	certificateSvc service.CertificateService,
 	authorSvc service.AuthorService,
 	progressSvc service.ProgressService,
+	studioSvc service.StudioService,
 	jwtSecret string,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -53,15 +54,11 @@ func NewRouter(
 		r.Get("/categories", category.List)
 		r.Get("/authors/{id}", author.GetByID)
 
-		// Optional auth
-		r.Group(func(r chi.Router) {
-			r.Use(OptionalAuthMiddleware(jwtSecret))
-			r.Get("/courses/recommended", course.Recommended)
-		})
-
 		// Protected
 		r.Group(func(r chi.Router) {
 			r.Use(AuthMiddleware(jwtSecret))
+
+			r.Get("/courses/recommended", course.Recommended)
 
 			r.Post("/courses/{id}/enroll", enrollment.Enroll)
 			r.Get("/enrollments", enrollment.List)
@@ -81,6 +78,36 @@ func NewRouter(
 			r.Get("/certificates/{id}", certificate.GetByID)
 
 			r.Post("/authors/apply", author.Apply)
+		})
+
+		// Studio (author only)
+		r.Route("/studio", func(r chi.Router) {
+			r.Use(AuthMiddleware(jwtSecret))
+			r.Use(AuthorMiddleware(studioSvc.ResolveAuthor))
+
+			studio := NewStudioHandler(studioSvc)
+
+			r.Get("/courses", studio.ListCourses)
+			r.Post("/courses", studio.CreateCourse)
+			r.Put("/courses/{id}", studio.UpdateCourse)
+			r.Delete("/courses/{id}", studio.DeleteCourse)
+			r.Post("/courses/{id}/publish", studio.PublishCourse)
+			r.Post("/courses/{id}/unpublish", studio.UnpublishCourse)
+
+			r.Post("/courses/{id}/modules", studio.CreateModule)
+			r.Put("/courses/{id}/modules/{moduleId}", studio.UpdateModule)
+			r.Delete("/courses/{id}/modules/{moduleId}", studio.DeleteModule)
+
+			r.Post("/courses/{id}/modules/{moduleId}/lessons", studio.CreateLesson)
+			r.Put("/courses/{id}/lessons/{lessonId}", studio.UpdateLesson)
+			r.Delete("/courses/{id}/lessons/{lessonId}", studio.DeleteLesson)
+
+			r.Get("/stats", studio.GetStats)
+			r.Get("/students", studio.ListStudents)
+			r.Get("/income", studio.GetIncome)
+			r.Get("/payouts", studio.ListPayouts)
+			r.Get("/reviews", studio.ListReviews)
+			r.Post("/reviews/{id}/reply", studio.ReplyToReview)
 		})
 	})
 

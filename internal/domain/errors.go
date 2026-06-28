@@ -61,6 +61,14 @@ var (
 var (
 	ErrAuthorNotFound = NewAppError("AUTHOR_NOT_FOUND", "Author not found", 404)
 	ErrAlreadyApplied = NewAppError("ALREADY_APPLIED", "You have already applied to become an author", 409)
+	ErrNotAuthor      = NewAppError("NOT_AUTHOR", "You are not an approved author", 403)
+	ErrCourseNotOwned = NewAppError("COURSE_NOT_OWNED", "You don't own this course", 403)
+)
+
+// Studio
+var (
+	ErrModuleNotFound = NewAppError("MODULE_NOT_FOUND", "Module not found", 404)
+	ErrReviewNotFound = NewAppError("REVIEW_NOT_FOUND", "Review not found", 404)
 )
 
 // Auth
