@@ -7,7 +7,7 @@ services:
       - "127.0.0.1:${SERVER_PORT:-8081}:8081"
     environment:
       SERVER_PORT: ${SERVER_PORT:-8081}
-      DB_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
       JWT_SECRET: ${JWT_SECRET}
     restart: unless-stopped
     depends_on:
