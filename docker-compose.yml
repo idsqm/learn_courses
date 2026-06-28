@@ -10,6 +10,7 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-courses}:${POSTGRES_PASSWORD:-courses}@postgres:5432/${POSTGRES_DB:-courses}?sslmode=disable
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       DEBUG: ${DEBUG:-false}
+      AUTH_SERVICE_URL: http://host.docker.internal:8080
     depends_on:
       postgres:
         condition: service_healthy

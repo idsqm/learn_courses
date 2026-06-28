@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/andruho/courses/internal/domain"
@@ -37,10 +38,25 @@ func (h *AuthorHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 func (h *AuthorHandler) Apply(w http.ResponseWriter, r *http.Request) {
 	userID := UserIDFromContext(r.Context())
 
-	if err := h.authors.Apply(r.Context(), userID); err != nil {
+	var req domain.ApplyAuthorRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeDecodeError(w, err)
+		return
+	}
+
+	ve := domain.NewValidationErrors()
+	if req.Name == "" {
+		ve.Add("name", "required")
+	}
+	if ve.HasErrors() {
+		writeError(w, ve)
+		return
+	}
+
+	if err := h.authors.Apply(r.Context(), userID, req); err != nil {
 		writeError(w, err)
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, map[string]string{"message": "Application submitted"})
+	writeJSON(w, http.StatusCreated, map[string]string{"message": "Author profile created"})
 }

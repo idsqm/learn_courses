@@ -9,3 +9,10 @@ type AuthorInfo struct {
 	CoursesCount    int    `json:"courses_count"`
 	YearsExperience int    `json:"years_experience"`
 }
+
+type ApplyAuthorRequest struct {
+	Name            string `json:"name"`
+	Subtitle        string `json:"subtitle"`
+	Bio             string `json:"bio"`
+	YearsExperience int    `json:"years_experience"`
+}

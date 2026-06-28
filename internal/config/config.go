@@ -8,10 +8,11 @@ import (
 )
 
 type Config struct {
-	ServerPort string `env:"SERVER_PORT,default=8081"`
-	DBURL      string `env:"DATABASE_URL,required"`
-	JWTSecret  string `env:"JWT_SECRET,required"`
-	Debug      bool   `env:"DEBUG,default=false"`
+	ServerPort     string `env:"SERVER_PORT,default=8081"`
+	DBURL          string `env:"DATABASE_URL,required"`
+	JWTSecret      string `env:"JWT_SECRET,required"`
+	Debug          bool   `env:"DEBUG,default=false"`
+	AuthServiceURL string `env:"AUTH_SERVICE_URL,default=http://localhost:8080"`
 }
 
 func Load() (*Config, error) {

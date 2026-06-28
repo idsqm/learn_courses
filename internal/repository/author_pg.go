@@ -13,7 +13,7 @@ import (
 
 type AuthorRepository interface {
 	GetByID(ctx context.Context, id int) (*domain.AuthorInfo, error)
-	Apply(ctx context.Context, userID string) error
+	Apply(ctx context.Context, userID string, req domain.ApplyAuthorRequest) error
 }
 
 type authorRepo struct {
@@ -42,9 +42,23 @@ func (r *authorRepo) GetByID(ctx context.Context, id int) (*domain.AuthorInfo, e
 	return &a, nil
 }
 
-func (r *authorRepo) Apply(ctx context.Context, userID string) error {
-	_, err := r.pool.Exec(ctx,
-		"INSERT INTO author_applications (user_id) VALUES ($1)", userID)
+func (r *authorRepo) Apply(ctx context.Context, userID string, req domain.ApplyAuthorRequest) error {
+	initials := ""
+	runes := []rune(req.Name)
+	if len(runes) > 0 {
+		initials = string(runes[:1])
+	}
+	for i, c := range runes {
+		if c == ' ' && i+1 < len(runes) {
+			initials += string(runes[i+1 : i+2])
+			break
+		}
+	}
+
+	_, err := r.pool.Exec(ctx, `
+		INSERT INTO authors (user_id, name, initials, subtitle, bio, years_experience, approved)
+		VALUES ($1, $2, $3, $4, $5, $6, true)
+	`, userID, req.Name, initials, req.Subtitle, req.Bio, req.YearsExperience)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {

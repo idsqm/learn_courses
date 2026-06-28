@@ -65,7 +65,7 @@ func main() {
 	favoriteSvc := service.NewFavoriteService(favorites, courses)
 	reviewSvc := service.NewReviewService(reviews, courses)
 	certificateSvc := service.NewCertificateService(certificates)
-	authorSvc := service.NewAuthorService(authors)
+	authorSvc := service.NewAuthorService(authors, cfg.AuthServiceURL)
 	progressSvc := service.NewProgressService(progress, certificates, enrollments)
 	studioSvc := service.NewStudioService(studioRepo)
 
