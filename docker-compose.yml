@@ -7,13 +7,15 @@ services:
       - "${SERVER_PORT:-8081}:8081"
     environment:
       SERVER_PORT: ${SERVER_PORT:-8081}
-      DATABASE_URL: postgres://${POSTGRES_USER:-courses}:${POSTGRES_PASSWORD:-courses}@postgres:5432/${POSTGRES_DB:-courses}?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER:-courses}:${POSTGRES_PASSWORD:-courses}@courses-db:5432/${POSTGRES_DB:-courses}?sslmode=disable
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
       DEBUG: ${DEBUG:-false}
       AUTH_SERVICE_URL: http://host.docker.internal:8080
     depends_on:
-      postgres:
+      courses-db:
         condition: service_healthy
+    networks:
+      - courses-backend
 
   dev:
     build:
@@ -24,15 +26,17 @@ services:
       - .:/app
       - gomodcache:/go/pkg/mod
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-courses}:${POSTGRES_PASSWORD:-courses}@postgres:5432/${POSTGRES_DB:-courses}?sslmode=disable
+      DATABASE_URL: postgres://${POSTGRES_USER:-courses}:${POSTGRES_PASSWORD:-courses}@courses-db:5432/${POSTGRES_DB:-courses}?sslmode=disable
       JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
     depends_on:
-      postgres:
+      courses-db:
         condition: service_healthy
     profiles:
       - tools
+    networks:
+      - courses-backend
 
-  postgres:
+  courses-db:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-courses}
@@ -47,7 +51,15 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - courses-backend
+      - learnquest
 
 volumes:
   pgdata:
   gomodcache:
+
+networks:
+  courses-backend:
+  learnquest:
+    external: true
