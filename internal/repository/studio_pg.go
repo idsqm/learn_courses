@@ -12,29 +12,29 @@ import (
 )
 
 type StudioRepository interface {
-	GetAuthorByUserID(ctx context.Context, userID string) (string, error)
+	GetAuthorByUserID(ctx context.Context, userID string) (int, error)
 
-	ListCourses(ctx context.Context, authorID string) ([]domain.StudioCourse, error)
-	CreateCourse(ctx context.Context, authorID string, req domain.CreateCourseRequest) (string, error)
-	UpdateCourse(ctx context.Context, authorID, courseID string, req domain.UpdateCourseRequest) error
-	DeleteCourse(ctx context.Context, authorID, courseID string) error
-	PublishCourse(ctx context.Context, authorID, courseID string) error
-	UnpublishCourse(ctx context.Context, authorID, courseID string) error
+	ListCourses(ctx context.Context, authorID int) ([]domain.StudioCourse, error)
+	CreateCourse(ctx context.Context, authorID int, req domain.CreateCourseRequest) (int, error)
+	UpdateCourse(ctx context.Context, authorID, courseID int, req domain.UpdateCourseRequest) error
+	DeleteCourse(ctx context.Context, authorID, courseID int) error
+	PublishCourse(ctx context.Context, authorID, courseID int) error
+	UnpublishCourse(ctx context.Context, authorID, courseID int) error
 
-	CreateModule(ctx context.Context, authorID, courseID string, req domain.CreateModuleRequest) (string, error)
-	UpdateModule(ctx context.Context, authorID, courseID, moduleID string, req domain.UpdateModuleRequest) error
-	DeleteModule(ctx context.Context, authorID, courseID, moduleID string) error
+	CreateModule(ctx context.Context, authorID, courseID int, req domain.CreateModuleRequest) (int, error)
+	UpdateModule(ctx context.Context, authorID, courseID, moduleID int, req domain.UpdateModuleRequest) error
+	DeleteModule(ctx context.Context, authorID, courseID, moduleID int) error
 
-	CreateLesson(ctx context.Context, authorID, courseID, moduleID string, req domain.CreateLessonRequest) (string, error)
-	UpdateLesson(ctx context.Context, authorID, courseID, lessonID string, req domain.UpdateLessonRequest) error
-	DeleteLesson(ctx context.Context, authorID, courseID, lessonID string) error
+	CreateLesson(ctx context.Context, authorID, courseID, moduleID int, req domain.CreateLessonRequest) (int, error)
+	UpdateLesson(ctx context.Context, authorID, courseID, lessonID int, req domain.UpdateLessonRequest) error
+	DeleteLesson(ctx context.Context, authorID, courseID, lessonID int) error
 
-	GetStats(ctx context.Context, authorID string) (*domain.StudioStats, error)
-	ListStudents(ctx context.Context, authorID string) ([]domain.StudioStudent, error)
-	GetIncome(ctx context.Context, authorID string) (*domain.StudioIncome, error)
-	ListPayouts(ctx context.Context, authorID string) ([]domain.Payout, error)
-	ListReviews(ctx context.Context, authorID string) ([]domain.StudioReview, error)
-	ReplyToReview(ctx context.Context, authorID, reviewID, reply string) error
+	GetStats(ctx context.Context, authorID int) (*domain.StudioStats, error)
+	ListStudents(ctx context.Context, authorID int) ([]domain.StudioStudent, error)
+	GetIncome(ctx context.Context, authorID int) (*domain.StudioIncome, error)
+	ListPayouts(ctx context.Context, authorID int) ([]domain.Payout, error)
+	ListReviews(ctx context.Context, authorID int) ([]domain.StudioReview, error)
+	ReplyToReview(ctx context.Context, authorID, reviewID int, reply string) error
 }
 
 type studioRepo struct {
@@ -45,22 +45,22 @@ func NewStudioRepository(pool *pgxpool.Pool) StudioRepository {
 	return &studioRepo{pool: pool}
 }
 
-func (r *studioRepo) GetAuthorByUserID(ctx context.Context, userID string) (string, error) {
-	var authorID string
+func (r *studioRepo) GetAuthorByUserID(ctx context.Context, userID string) (int, error) {
+	var authorID int
 	err := r.pool.QueryRow(ctx,
 		"SELECT id FROM authors WHERE user_id = $1 AND approved = true", userID).Scan(&authorID)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return "", domain.ErrNotAuthor
+			return 0, domain.ErrNotAuthor
 		}
-		return "", err
+		return 0, err
 	}
 	return authorID, nil
 }
 
 // --- Courses ---
 
-func (r *studioRepo) ListCourses(ctx context.Context, authorID string) ([]domain.StudioCourse, error) {
+func (r *studioRepo) ListCourses(ctx context.Context, authorID int) ([]domain.StudioCourse, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT
 			c.id, c.title, cat.name,
@@ -98,7 +98,7 @@ func (r *studioRepo) ListCourses(ctx context.Context, authorID string) ([]domain
 	return courses, nil
 }
 
-func (r *studioRepo) CreateCourse(ctx context.Context, authorID string, req domain.CreateCourseRequest) (string, error) {
+func (r *studioRepo) CreateCourse(ctx context.Context, authorID int, req domain.CreateCourseRequest) (int, error) {
 	color1 := req.Color1
 	if color1 == "" {
 		color1 = "#6366f1"
@@ -108,7 +108,7 @@ func (r *studioRepo) CreateCourse(ctx context.Context, authorID string, req doma
 		color2 = "#8b5cf6"
 	}
 
-	var id string
+	var id int
 	err := r.pool.QueryRow(ctx, `
 		INSERT INTO courses (title, subtitle, description, author_id, category_id, level, price, old_price, is_free, color_1, color_2)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -118,7 +118,7 @@ func (r *studioRepo) CreateCourse(ctx context.Context, authorID string, req doma
 	return id, err
 }
 
-func (r *studioRepo) UpdateCourse(ctx context.Context, authorID, courseID string, req domain.UpdateCourseRequest) error {
+func (r *studioRepo) UpdateCourse(ctx context.Context, authorID, courseID int, req domain.UpdateCourseRequest) error {
 	sets := []string{}
 	args := []any{}
 	idx := 1
@@ -182,7 +182,7 @@ func (r *studioRepo) UpdateCourse(ctx context.Context, authorID, courseID string
 	return nil
 }
 
-func (r *studioRepo) DeleteCourse(ctx context.Context, authorID, courseID string) error {
+func (r *studioRepo) DeleteCourse(ctx context.Context, authorID, courseID int) error {
 	tag, err := r.pool.Exec(ctx, "DELETE FROM courses WHERE id = $1 AND author_id = $2", courseID, authorID)
 	if err != nil {
 		return err
@@ -193,15 +193,15 @@ func (r *studioRepo) DeleteCourse(ctx context.Context, authorID, courseID string
 	return nil
 }
 
-func (r *studioRepo) PublishCourse(ctx context.Context, authorID, courseID string) error {
+func (r *studioRepo) PublishCourse(ctx context.Context, authorID, courseID int) error {
 	return r.setCoursePublished(ctx, authorID, courseID, true)
 }
 
-func (r *studioRepo) UnpublishCourse(ctx context.Context, authorID, courseID string) error {
+func (r *studioRepo) UnpublishCourse(ctx context.Context, authorID, courseID int) error {
 	return r.setCoursePublished(ctx, authorID, courseID, false)
 }
 
-func (r *studioRepo) setCoursePublished(ctx context.Context, authorID, courseID string, published bool) error {
+func (r *studioRepo) setCoursePublished(ctx context.Context, authorID, courseID int, published bool) error {
 	tag, err := r.pool.Exec(ctx,
 		"UPDATE courses SET published = $1, updated_at = NOW() WHERE id = $2 AND author_id = $3",
 		published, courseID, authorID)
@@ -216,18 +216,18 @@ func (r *studioRepo) setCoursePublished(ctx context.Context, authorID, courseID 
 
 // --- Modules ---
 
-func (r *studioRepo) CreateModule(ctx context.Context, authorID, courseID string, req domain.CreateModuleRequest) (string, error) {
+func (r *studioRepo) CreateModule(ctx context.Context, authorID, courseID int, req domain.CreateModuleRequest) (int, error) {
 	if err := r.verifyCourseOwner(ctx, authorID, courseID); err != nil {
-		return "", err
+		return 0, err
 	}
-	var id string
+	var id int
 	err := r.pool.QueryRow(ctx,
 		"INSERT INTO course_modules (course_id, title, sort_order) VALUES ($1, $2, $3) RETURNING id",
 		courseID, req.Title, req.SortOrder).Scan(&id)
 	return id, err
 }
 
-func (r *studioRepo) UpdateModule(ctx context.Context, authorID, courseID, moduleID string, req domain.UpdateModuleRequest) error {
+func (r *studioRepo) UpdateModule(ctx context.Context, authorID, courseID, moduleID int, req domain.UpdateModuleRequest) error {
 	if err := r.verifyCourseOwner(ctx, authorID, courseID); err != nil {
 		return err
 	}
@@ -265,7 +265,7 @@ func (r *studioRepo) UpdateModule(ctx context.Context, authorID, courseID, modul
 	return nil
 }
 
-func (r *studioRepo) DeleteModule(ctx context.Context, authorID, courseID, moduleID string) error {
+func (r *studioRepo) DeleteModule(ctx context.Context, authorID, courseID, moduleID int) error {
 	if err := r.verifyCourseOwner(ctx, authorID, courseID); err != nil {
 		return err
 	}
@@ -281,22 +281,22 @@ func (r *studioRepo) DeleteModule(ctx context.Context, authorID, courseID, modul
 
 // --- Lessons ---
 
-func (r *studioRepo) CreateLesson(ctx context.Context, authorID, courseID, moduleID string, req domain.CreateLessonRequest) (string, error) {
+func (r *studioRepo) CreateLesson(ctx context.Context, authorID, courseID, moduleID int, req domain.CreateLessonRequest) (int, error) {
 	if err := r.verifyCourseOwner(ctx, authorID, courseID); err != nil {
-		return "", err
+		return 0, err
 	}
 	lessonType := req.Type
 	if lessonType == "" {
 		lessonType = "video"
 	}
-	var id string
+	var id int
 	err := r.pool.QueryRow(ctx,
 		"INSERT INTO lessons (module_id, course_id, name, type, is_free) VALUES ($1, $2, $3, $4, $5) RETURNING id",
 		moduleID, courseID, req.Name, lessonType, req.IsFree).Scan(&id)
 	return id, err
 }
 
-func (r *studioRepo) UpdateLesson(ctx context.Context, authorID, courseID, lessonID string, req domain.UpdateLessonRequest) error {
+func (r *studioRepo) UpdateLesson(ctx context.Context, authorID, courseID, lessonID int, req domain.UpdateLessonRequest) error {
 	if err := r.verifyCourseOwner(ctx, authorID, courseID); err != nil {
 		return err
 	}
@@ -349,7 +349,7 @@ func (r *studioRepo) UpdateLesson(ctx context.Context, authorID, courseID, lesso
 	return nil
 }
 
-func (r *studioRepo) DeleteLesson(ctx context.Context, authorID, courseID, lessonID string) error {
+func (r *studioRepo) DeleteLesson(ctx context.Context, authorID, courseID, lessonID int) error {
 	if err := r.verifyCourseOwner(ctx, authorID, courseID); err != nil {
 		return err
 	}
@@ -365,7 +365,7 @@ func (r *studioRepo) DeleteLesson(ctx context.Context, authorID, courseID, lesso
 
 // --- Stats ---
 
-func (r *studioRepo) GetStats(ctx context.Context, authorID string) (*domain.StudioStats, error) {
+func (r *studioRepo) GetStats(ctx context.Context, authorID int) (*domain.StudioStats, error) {
 	var s domain.StudioStats
 	err := r.pool.QueryRow(ctx, `
 		SELECT
@@ -386,7 +386,7 @@ func (r *studioRepo) GetStats(ctx context.Context, authorID string) (*domain.Stu
 
 // --- Students ---
 
-func (r *studioRepo) ListStudents(ctx context.Context, authorID string) ([]domain.StudioStudent, error) {
+func (r *studioRepo) ListStudents(ctx context.Context, authorID int) ([]domain.StudioStudent, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT
 			e.user_id, c.title,
@@ -424,7 +424,7 @@ func (r *studioRepo) ListStudents(ctx context.Context, authorID string) ([]domai
 
 // --- Income ---
 
-func (r *studioRepo) GetIncome(ctx context.Context, authorID string) (*domain.StudioIncome, error) {
+func (r *studioRepo) GetIncome(ctx context.Context, authorID int) (*domain.StudioIncome, error) {
 	var inc domain.StudioIncome
 	err := r.pool.QueryRow(ctx, `
 		SELECT
@@ -440,7 +440,7 @@ func (r *studioRepo) GetIncome(ctx context.Context, authorID string) (*domain.St
 	return &inc, nil
 }
 
-func (r *studioRepo) ListPayouts(ctx context.Context, authorID string) ([]domain.Payout, error) {
+func (r *studioRepo) ListPayouts(ctx context.Context, authorID int) ([]domain.Payout, error) {
 	rows, err := r.pool.Query(ctx,
 		"SELECT id, amount, status, created_at, completed_at FROM payouts WHERE author_id = $1 ORDER BY created_at DESC",
 		authorID)
@@ -465,7 +465,7 @@ func (r *studioRepo) ListPayouts(ctx context.Context, authorID string) ([]domain
 
 // --- Reviews ---
 
-func (r *studioRepo) ListReviews(ctx context.Context, authorID string) ([]domain.StudioReview, error) {
+func (r *studioRepo) ListReviews(ctx context.Context, authorID int) ([]domain.StudioReview, error) {
 	rows, err := r.pool.Query(ctx, `
 		SELECT rv.id, c.title, rv.name, rv.initials, rv.text, rv.rating, rv.reply, rv.created_at
 		FROM reviews rv
@@ -492,7 +492,7 @@ func (r *studioRepo) ListReviews(ctx context.Context, authorID string) ([]domain
 	return reviews, nil
 }
 
-func (r *studioRepo) ReplyToReview(ctx context.Context, authorID, reviewID, reply string) error {
+func (r *studioRepo) ReplyToReview(ctx context.Context, authorID, reviewID int, reply string) error {
 	tag, err := r.pool.Exec(ctx, `
 		UPDATE reviews SET reply = $1, replied_at = NOW()
 		WHERE id = $2 AND course_id IN (SELECT id FROM courses WHERE author_id = $3)
@@ -508,7 +508,7 @@ func (r *studioRepo) ReplyToReview(ctx context.Context, authorID, reviewID, repl
 
 // --- Helpers ---
 
-func (r *studioRepo) verifyCourseOwner(ctx context.Context, authorID, courseID string) error {
+func (r *studioRepo) verifyCourseOwner(ctx context.Context, authorID, courseID int) error {
 	var exists bool
 	err := r.pool.QueryRow(ctx,
 		"SELECT EXISTS(SELECT 1 FROM courses WHERE id = $1 AND author_id = $2)",

@@ -3,8 +3,6 @@ package handler
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-
 	"github.com/andruho/courses/internal/domain"
 	"github.com/andruho/courses/internal/service"
 )
@@ -30,7 +28,11 @@ func (h *CertificateHandler) List(w http.ResponseWriter, r *http.Request) {
 
 func (h *CertificateHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	userID := UserIDFromContext(r.Context())
-	certID := chi.URLParam(r, "id")
+	certID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCertificateNotFound)
+		return
+	}
 
 	cert, err := h.certificates.GetByID(r.Context(), userID, certID)
 	if err != nil {

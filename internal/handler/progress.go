@@ -3,8 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-
+	"github.com/andruho/courses/internal/domain"
 	"github.com/andruho/courses/internal/service"
 )
 
@@ -18,8 +17,16 @@ func NewProgressHandler(progress service.ProgressService) *ProgressHandler {
 
 func (h *ProgressHandler) CompleteLesson(w http.ResponseWriter, r *http.Request) {
 	userID := UserIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
-	lessonID := chi.URLParam(r, "lessonID")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
+	lessonID, err := intURLParam(r, "lessonID")
+	if err != nil {
+		writeError(w, domain.ErrLessonNotFound)
+		return
+	}
 
 	if err := h.progress.CompleteLesson(r.Context(), userID, courseID, lessonID); err != nil {
 		writeError(w, err)
@@ -31,7 +38,11 @@ func (h *ProgressHandler) CompleteLesson(w http.ResponseWriter, r *http.Request)
 
 func (h *ProgressHandler) GetCourseProgress(w http.ResponseWriter, r *http.Request) {
 	userID := UserIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
 
 	progress, err := h.progress.GetCourseProgress(r.Context(), userID, courseID)
 	if err != nil {

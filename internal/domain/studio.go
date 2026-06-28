@@ -3,7 +3,7 @@ package domain
 import "time"
 
 type StudioCourse struct {
-	ID            string  `json:"id"`
+	ID            int     `json:"id"`
 	Title         string  `json:"title"`
 	Category      string  `json:"category"`
 	LessonsCount  int     `json:"lessons_count"`
@@ -15,7 +15,7 @@ type StudioCourse struct {
 type CreateCourseRequest struct {
 	Title       string   `json:"title"`
 	Subtitle    string   `json:"subtitle"`
-	CategoryID  string   `json:"category_id"`
+	CategoryID  int      `json:"category_id"`
 	Level       string   `json:"level"`
 	Description string   `json:"description"`
 	Price       float64  `json:"price"`
@@ -28,7 +28,7 @@ type CreateCourseRequest struct {
 type UpdateCourseRequest struct {
 	Title       *string  `json:"title"`
 	Subtitle    *string  `json:"subtitle"`
-	CategoryID  *string  `json:"category_id"`
+	CategoryID  *int     `json:"category_id"`
 	Level       *string  `json:"level"`
 	Description *string  `json:"description"`
 	Price       *float64 `json:"price"`
@@ -60,7 +60,7 @@ type StudioIncome struct {
 }
 
 type Payout struct {
-	ID          string     `json:"id"`
+	ID          int        `json:"id"`
 	Amount      float64    `json:"amount"`
 	Status      string     `json:"status"`
 	CreatedAt   time.Time  `json:"created_at"`
@@ -92,7 +92,7 @@ type UpdateLessonRequest struct {
 }
 
 type StudioReview struct {
-	ID         string    `json:"id"`
+	ID         int       `json:"id"`
 	CourseName string    `json:"course_name"`
 	Name       string    `json:"name"`
 	Initials   string    `json:"initials"`

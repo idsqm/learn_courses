@@ -8,8 +8,8 @@ import (
 )
 
 type FavoriteService interface {
-	Add(ctx context.Context, userID, courseID string) error
-	Remove(ctx context.Context, userID, courseID string) error
+	Add(ctx context.Context, userID string, courseID int) error
+	Remove(ctx context.Context, userID string, courseID int) error
 	ListByUser(ctx context.Context, userID string) ([]domain.CourseListItem, error)
 }
 
@@ -22,7 +22,7 @@ func NewFavoriteService(favorites repository.FavoriteRepository, courses reposit
 	return &favoriteService{favorites: favorites, courses: courses}
 }
 
-func (s *favoriteService) Add(ctx context.Context, userID, courseID string) error {
+func (s *favoriteService) Add(ctx context.Context, userID string, courseID int) error {
 	exists, err := s.courses.Exists(ctx, courseID)
 	if err != nil {
 		return err
@@ -33,7 +33,7 @@ func (s *favoriteService) Add(ctx context.Context, userID, courseID string) erro
 	return s.favorites.Add(ctx, userID, courseID)
 }
 
-func (s *favoriteService) Remove(ctx context.Context, userID, courseID string) error {
+func (s *favoriteService) Remove(ctx context.Context, userID string, courseID int) error {
 	return s.favorites.Remove(ctx, userID, courseID)
 }
 

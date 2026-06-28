@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-
 	"github.com/andruho/courses/internal/domain"
 	"github.com/andruho/courses/internal/service"
 )
@@ -43,7 +41,7 @@ func (h *StudioHandler) CreateCourse(w http.ResponseWriter, r *http.Request) {
 	if req.Title == "" {
 		ve.Add("title", "required")
 	}
-	if req.CategoryID == "" {
+	if req.CategoryID == 0 {
 		ve.Add("category_id", "required")
 	}
 	if ve.HasErrors() {
@@ -60,12 +58,16 @@ func (h *StudioHandler) CreateCourse(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]string{"id": id})
+	writeJSON(w, http.StatusCreated, map[string]any{"id": id})
 }
 
 func (h *StudioHandler) UpdateCourse(w http.ResponseWriter, r *http.Request) {
 	authorID := AuthorIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
 
 	var req domain.UpdateCourseRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -82,7 +84,11 @@ func (h *StudioHandler) UpdateCourse(w http.ResponseWriter, r *http.Request) {
 
 func (h *StudioHandler) DeleteCourse(w http.ResponseWriter, r *http.Request) {
 	authorID := AuthorIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
 
 	if err := h.studio.DeleteCourse(r.Context(), authorID, courseID); err != nil {
 		writeError(w, err)
@@ -93,7 +99,11 @@ func (h *StudioHandler) DeleteCourse(w http.ResponseWriter, r *http.Request) {
 
 func (h *StudioHandler) PublishCourse(w http.ResponseWriter, r *http.Request) {
 	authorID := AuthorIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
 
 	if err := h.studio.PublishCourse(r.Context(), authorID, courseID); err != nil {
 		writeError(w, err)
@@ -104,7 +114,11 @@ func (h *StudioHandler) PublishCourse(w http.ResponseWriter, r *http.Request) {
 
 func (h *StudioHandler) UnpublishCourse(w http.ResponseWriter, r *http.Request) {
 	authorID := AuthorIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
 
 	if err := h.studio.UnpublishCourse(r.Context(), authorID, courseID); err != nil {
 		writeError(w, err)
@@ -117,7 +131,11 @@ func (h *StudioHandler) UnpublishCourse(w http.ResponseWriter, r *http.Request) 
 
 func (h *StudioHandler) CreateModule(w http.ResponseWriter, r *http.Request) {
 	authorID := AuthorIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
 
 	var req domain.CreateModuleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -136,13 +154,21 @@ func (h *StudioHandler) CreateModule(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]string{"id": id})
+	writeJSON(w, http.StatusCreated, map[string]any{"id": id})
 }
 
 func (h *StudioHandler) UpdateModule(w http.ResponseWriter, r *http.Request) {
 	authorID := AuthorIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
-	moduleID := chi.URLParam(r, "moduleId")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
+	moduleID, err := intURLParam(r, "moduleId")
+	if err != nil {
+		writeError(w, domain.ErrModuleNotFound)
+		return
+	}
 
 	var req domain.UpdateModuleRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -159,8 +185,16 @@ func (h *StudioHandler) UpdateModule(w http.ResponseWriter, r *http.Request) {
 
 func (h *StudioHandler) DeleteModule(w http.ResponseWriter, r *http.Request) {
 	authorID := AuthorIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
-	moduleID := chi.URLParam(r, "moduleId")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
+	moduleID, err := intURLParam(r, "moduleId")
+	if err != nil {
+		writeError(w, domain.ErrModuleNotFound)
+		return
+	}
 
 	if err := h.studio.DeleteModule(r.Context(), authorID, courseID, moduleID); err != nil {
 		writeError(w, err)
@@ -173,8 +207,16 @@ func (h *StudioHandler) DeleteModule(w http.ResponseWriter, r *http.Request) {
 
 func (h *StudioHandler) CreateLesson(w http.ResponseWriter, r *http.Request) {
 	authorID := AuthorIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
-	moduleID := chi.URLParam(r, "moduleId")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
+	moduleID, err := intURLParam(r, "moduleId")
+	if err != nil {
+		writeError(w, domain.ErrModuleNotFound)
+		return
+	}
 
 	var req domain.CreateLessonRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -193,13 +235,21 @@ func (h *StudioHandler) CreateLesson(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]string{"id": id})
+	writeJSON(w, http.StatusCreated, map[string]any{"id": id})
 }
 
 func (h *StudioHandler) UpdateLesson(w http.ResponseWriter, r *http.Request) {
 	authorID := AuthorIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
-	lessonID := chi.URLParam(r, "lessonId")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
+	lessonID, err := intURLParam(r, "lessonId")
+	if err != nil {
+		writeError(w, domain.ErrLessonNotFound)
+		return
+	}
 
 	var req domain.UpdateLessonRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -216,8 +266,16 @@ func (h *StudioHandler) UpdateLesson(w http.ResponseWriter, r *http.Request) {
 
 func (h *StudioHandler) DeleteLesson(w http.ResponseWriter, r *http.Request) {
 	authorID := AuthorIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
-	lessonID := chi.URLParam(r, "lessonId")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
+	lessonID, err := intURLParam(r, "lessonId")
+	if err != nil {
+		writeError(w, domain.ErrLessonNotFound)
+		return
+	}
 
 	if err := h.studio.DeleteLesson(r.Context(), authorID, courseID, lessonID); err != nil {
 		writeError(w, err)
@@ -282,7 +340,11 @@ func (h *StudioHandler) ListReviews(w http.ResponseWriter, r *http.Request) {
 
 func (h *StudioHandler) ReplyToReview(w http.ResponseWriter, r *http.Request) {
 	authorID := AuthorIDFromContext(r.Context())
-	reviewID := chi.URLParam(r, "id")
+	reviewID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrReviewNotFound)
+		return
+	}
 
 	var req struct {
 		Reply string `json:"reply"`

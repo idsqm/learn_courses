@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-chi/chi/v5"
-
 	"github.com/andruho/courses/internal/domain"
 	"github.com/andruho/courses/internal/service"
 )
@@ -65,7 +63,11 @@ func (h *CourseHandler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *CourseHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
 
 	course, err := h.courses.GetByID(r.Context(), id)
 	if err != nil {

@@ -8,8 +8,8 @@ import (
 )
 
 type ProgressService interface {
-	CompleteLesson(ctx context.Context, userID, courseID, lessonID string) error
-	GetCourseProgress(ctx context.Context, userID, courseID string) (*domain.CourseProgress, error)
+	CompleteLesson(ctx context.Context, userID string, courseID, lessonID int) error
+	GetCourseProgress(ctx context.Context, userID string, courseID int) (*domain.CourseProgress, error)
 	GetUserStats(ctx context.Context, userID string) (*domain.UserStats, error)
 }
 
@@ -31,7 +31,7 @@ func NewProgressService(
 	}
 }
 
-func (s *progressService) CompleteLesson(ctx context.Context, userID, courseID, lessonID string) error {
+func (s *progressService) CompleteLesson(ctx context.Context, userID string, courseID, lessonID int) error {
 	enrolled, err := s.enrollments.IsEnrolled(ctx, userID, courseID)
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func (s *progressService) CompleteLesson(ctx context.Context, userID, courseID, 
 	return nil
 }
 
-func (s *progressService) GetCourseProgress(ctx context.Context, userID, courseID string) (*domain.CourseProgress, error) {
+func (s *progressService) GetCourseProgress(ctx context.Context, userID string, courseID int) (*domain.CourseProgress, error) {
 	return s.progress.GetCourseProgress(ctx, userID, courseID)
 }
 

@@ -13,9 +13,9 @@ import (
 )
 
 type EnrollmentRepository interface {
-	Enroll(ctx context.Context, userID, courseID string) error
+	Enroll(ctx context.Context, userID string, courseID int) error
 	ListByUser(ctx context.Context, userID string) ([]domain.EnrolledCourse, error)
-	IsEnrolled(ctx context.Context, userID, courseID string) (bool, error)
+	IsEnrolled(ctx context.Context, userID string, courseID int) (bool, error)
 }
 
 type enrollmentRepo struct {
@@ -26,7 +26,7 @@ func NewEnrollmentRepository(pool *pgxpool.Pool) EnrollmentRepository {
 	return &enrollmentRepo{pool: pool}
 }
 
-func (r *enrollmentRepo) Enroll(ctx context.Context, userID, courseID string) error {
+func (r *enrollmentRepo) Enroll(ctx context.Context, userID string, courseID int) error {
 	_, err := r.pool.Exec(ctx,
 		"INSERT INTO enrollments (user_id, course_id) VALUES ($1, $2)", userID, courseID)
 	if err != nil {
@@ -102,7 +102,7 @@ func (r *enrollmentRepo) ListByUser(ctx context.Context, userID string) ([]domai
 	return result, nil
 }
 
-func (r *enrollmentRepo) IsEnrolled(ctx context.Context, userID, courseID string) (bool, error) {
+func (r *enrollmentRepo) IsEnrolled(ctx context.Context, userID string, courseID int) (bool, error) {
 	var exists bool
 	err := r.pool.QueryRow(ctx,
 		"SELECT EXISTS(SELECT 1 FROM enrollments WHERE user_id = $1 AND course_id = $2)",

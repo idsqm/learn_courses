@@ -5,6 +5,9 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
 
 	"github.com/andruho/courses/internal/domain"
 )
@@ -27,6 +30,10 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 func writeOK(w http.ResponseWriter, v any) {
 	writeJSON(w, http.StatusOK, v)
+}
+
+func intURLParam(r *http.Request, name string) (int, error) {
+	return strconv.Atoi(chi.URLParam(r, name))
 }
 
 func writeError(w http.ResponseWriter, err error) {

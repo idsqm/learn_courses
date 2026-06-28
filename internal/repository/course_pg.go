@@ -13,10 +13,10 @@ import (
 
 type CourseRepository interface {
 	List(ctx context.Context, f domain.CourseFilter) ([]domain.CourseListItem, int, error)
-	GetByID(ctx context.Context, id string) (*domain.CourseDetail, error)
+	GetByID(ctx context.Context, id int) (*domain.CourseDetail, error)
 	GetFeatured(ctx context.Context, limit int) ([]domain.CourseListItem, error)
 	GetRecommended(ctx context.Context, userID string, limit int) ([]domain.CourseListItem, error)
-	Exists(ctx context.Context, id string) (bool, error)
+	Exists(ctx context.Context, id int) (bool, error)
 }
 
 type courseRepo struct {
@@ -121,9 +121,9 @@ func (r *courseRepo) List(ctx context.Context, f domain.CourseFilter) ([]domain.
 	return courses, total, nil
 }
 
-func (r *courseRepo) GetByID(ctx context.Context, id string) (*domain.CourseDetail, error) {
+func (r *courseRepo) GetByID(ctx context.Context, id int) (*domain.CourseDetail, error) {
 	var d domain.CourseDetail
-	var authorID string
+	var authorID int
 	err := r.pool.QueryRow(ctx, `
 		SELECT
 			c.id, c.title, c.description, cat.name,
@@ -204,7 +204,7 @@ func (r *courseRepo) GetRecommended(ctx context.Context, userID string, limit in
 	return scanCourseList(rows)
 }
 
-func (r *courseRepo) Exists(ctx context.Context, id string) (bool, error) {
+func (r *courseRepo) Exists(ctx context.Context, id int) (bool, error) {
 	var exists bool
 	err := r.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM courses WHERE id = $1)", id).Scan(&exists)
 	return exists, err
@@ -220,7 +220,7 @@ func (r *courseRepo) listByOrder(ctx context.Context, order string, limit int) (
 	return scanCourseList(rows)
 }
 
-func (r *courseRepo) getStringList(ctx context.Context, query, courseID string) ([]string, error) {
+func (r *courseRepo) getStringList(ctx context.Context, query string, courseID int) ([]string, error) {
 	rows, err := r.pool.Query(ctx, query, courseID)
 	if err != nil {
 		return nil, err
@@ -241,7 +241,7 @@ func (r *courseRepo) getStringList(ctx context.Context, query, courseID string) 
 	return items, nil
 }
 
-func (r *courseRepo) getCurriculum(ctx context.Context, courseID string) ([]domain.Module, error) {
+func (r *courseRepo) getCurriculum(ctx context.Context, courseID int) ([]domain.Module, error) {
 	moduleRows, err := r.pool.Query(ctx,
 		"SELECT id, title FROM course_modules WHERE course_id = $1 ORDER BY sort_order", courseID)
 	if err != nil {
@@ -250,7 +250,8 @@ func (r *courseRepo) getCurriculum(ctx context.Context, courseID string) ([]doma
 	defer moduleRows.Close()
 
 	type moduleRow struct {
-		id, title string
+		id    int
+		title string
 	}
 	var mods []moduleRow
 	for moduleRows.Next() {
@@ -302,7 +303,7 @@ func (r *courseRepo) getCurriculum(ctx context.Context, courseID string) ([]doma
 	return curriculum, nil
 }
 
-func (r *courseRepo) getReviews(ctx context.Context, courseID string) ([]domain.Review, error) {
+func (r *courseRepo) getReviews(ctx context.Context, courseID int) ([]domain.Review, error) {
 	rows, err := r.pool.Query(ctx,
 		"SELECT id, name, initials, text, rating FROM reviews WHERE course_id = $1 ORDER BY created_at DESC", courseID)
 	if err != nil {
@@ -324,7 +325,7 @@ func (r *courseRepo) getReviews(ctx context.Context, courseID string) ([]domain.
 	return reviews, nil
 }
 
-func (r *courseRepo) getAuthor(ctx context.Context, authorID string) (*domain.AuthorInfo, error) {
+func (r *courseRepo) getAuthor(ctx context.Context, authorID int) (*domain.AuthorInfo, error) {
 	var a domain.AuthorInfo
 	err := r.pool.QueryRow(ctx, `
 		SELECT id, name, initials, subtitle, bio,

@@ -11,7 +11,7 @@ import (
 )
 
 type ReviewRepository interface {
-	Create(ctx context.Context, userID, courseID, name, initials, text string, rating int) error
+	Create(ctx context.Context, userID string, courseID int, name, initials, text string, rating int) error
 }
 
 type reviewRepo struct {
@@ -22,7 +22,7 @@ func NewReviewRepository(pool *pgxpool.Pool) ReviewRepository {
 	return &reviewRepo{pool: pool}
 }
 
-func (r *reviewRepo) Create(ctx context.Context, userID, courseID, name, initials, text string, rating int) error {
+func (r *reviewRepo) Create(ctx context.Context, userID string, courseID int, name, initials, text string, rating int) error {
 	_, err := r.pool.Exec(ctx, `
 		INSERT INTO reviews (user_id, course_id, name, initials, text, rating)
 		VALUES ($1, $2, $3, $4, $5, $6)

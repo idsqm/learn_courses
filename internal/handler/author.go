@@ -3,8 +3,6 @@ package handler
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-
 	"github.com/andruho/courses/internal/domain"
 	"github.com/andruho/courses/internal/service"
 )
@@ -18,7 +16,11 @@ func NewAuthorHandler(authors service.AuthorService) *AuthorHandler {
 }
 
 func (h *AuthorHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrAuthorNotFound)
+		return
+	}
 
 	author, err := h.authors.GetByID(r.Context(), id)
 	if err != nil {

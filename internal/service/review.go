@@ -8,7 +8,7 @@ import (
 )
 
 type ReviewService interface {
-	Create(ctx context.Context, userID, courseID, name, initials, text string, rating int) error
+	Create(ctx context.Context, userID string, courseID int, name, initials, text string, rating int) error
 }
 
 type reviewService struct {
@@ -20,7 +20,7 @@ func NewReviewService(reviews repository.ReviewRepository, courses repository.Co
 	return &reviewService{reviews: reviews, courses: courses}
 }
 
-func (s *reviewService) Create(ctx context.Context, userID, courseID, name, initials, text string, rating int) error {
+func (s *reviewService) Create(ctx context.Context, userID string, courseID int, name, initials, text string, rating int) error {
 	exists, err := s.courses.Exists(ctx, courseID)
 	if err != nil {
 		return err

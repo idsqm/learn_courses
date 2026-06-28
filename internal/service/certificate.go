@@ -9,7 +9,7 @@ import (
 
 type CertificateService interface {
 	ListByUser(ctx context.Context, userID string) ([]domain.Certificate, error)
-	GetByID(ctx context.Context, userID, certID string) (*domain.Certificate, error)
+	GetByID(ctx context.Context, userID string, certID int) (*domain.Certificate, error)
 }
 
 type certificateService struct {
@@ -24,6 +24,6 @@ func (s *certificateService) ListByUser(ctx context.Context, userID string) ([]d
 	return s.certificates.ListByUser(ctx, userID)
 }
 
-func (s *certificateService) GetByID(ctx context.Context, userID, certID string) (*domain.Certificate, error) {
+func (s *certificateService) GetByID(ctx context.Context, userID string, certID int) (*domain.Certificate, error) {
 	return s.certificates.GetByID(ctx, userID, certID)
 }

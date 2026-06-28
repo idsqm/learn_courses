@@ -1,8 +1,7 @@
 -- +goose Up
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE IF NOT EXISTS categories (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     abbreviation VARCHAR(10) NOT NULL,
     color VARCHAR(7) NOT NULL DEFAULT '#6366f1',
@@ -10,7 +9,7 @@ CREATE TABLE IF NOT EXISTS categories (
 );
 
 CREATE TABLE IF NOT EXISTS authors (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     initials VARCHAR(10) NOT NULL,
@@ -23,11 +22,11 @@ CREATE TABLE IF NOT EXISTS authors (
 );
 
 CREATE TABLE IF NOT EXISTS courses (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL DEFAULT '',
-    author_id UUID NOT NULL REFERENCES authors(id),
-    category_id UUID NOT NULL REFERENCES categories(id),
+    author_id INT NOT NULL REFERENCES authors(id),
+    category_id INT NOT NULL REFERENCES categories(id),
     level VARCHAR(50) NOT NULL DEFAULT 'Любой',
     price NUMERIC(10,2) NOT NULL,
     old_price NUMERIC(10,2),
@@ -41,30 +40,30 @@ CREATE TABLE IF NOT EXISTS courses (
 );
 
 CREATE TABLE IF NOT EXISTS course_learn_items (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
+    course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     text TEXT NOT NULL,
     sort_order INT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS course_includes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
+    course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     text TEXT NOT NULL,
     sort_order INT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS course_modules (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
+    course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     sort_order INT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS lessons (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    module_id UUID NOT NULL REFERENCES course_modules(id) ON DELETE CASCADE,
-    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    id SERIAL PRIMARY KEY,
+    module_id INT NOT NULL REFERENCES course_modules(id) ON DELETE CASCADE,
+    course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     duration_minutes INT NOT NULL DEFAULT 0,
     is_free BOOLEAN NOT NULL DEFAULT false,
@@ -72,34 +71,34 @@ CREATE TABLE IF NOT EXISTS lessons (
 );
 
 CREATE TABLE IF NOT EXISTS enrollments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL,
-    course_id UUID NOT NULL REFERENCES courses(id),
+    course_id INT NOT NULL REFERENCES courses(id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(user_id, course_id)
 );
 
 CREATE TABLE IF NOT EXISTS lesson_progress (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL,
-    course_id UUID NOT NULL REFERENCES courses(id),
-    lesson_id UUID NOT NULL REFERENCES lessons(id),
+    course_id INT NOT NULL REFERENCES courses(id),
+    lesson_id INT NOT NULL REFERENCES lessons(id),
     completed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(user_id, lesson_id)
 );
 
 CREATE TABLE IF NOT EXISTS favorites (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL,
-    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
+    course_id INT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(user_id, course_id)
 );
 
 CREATE TABLE IF NOT EXISTS reviews (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL,
-    course_id UUID NOT NULL REFERENCES courses(id),
+    course_id INT NOT NULL REFERENCES courses(id),
     name VARCHAR(255) NOT NULL,
     initials VARCHAR(10) NOT NULL,
     text TEXT NOT NULL,
@@ -109,15 +108,15 @@ CREATE TABLE IF NOT EXISTS reviews (
 );
 
 CREATE TABLE IF NOT EXISTS certificates (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL,
-    course_id UUID NOT NULL REFERENCES courses(id),
+    course_id INT NOT NULL REFERENCES courses(id),
     issued_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(user_id, course_id)
 );
 
 CREATE TABLE IF NOT EXISTS author_applications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

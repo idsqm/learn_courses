@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-
 	"github.com/andruho/courses/internal/domain"
 	"github.com/andruho/courses/internal/service"
 )
@@ -20,7 +18,11 @@ func NewReviewHandler(reviews service.ReviewService) *ReviewHandler {
 
 func (h *ReviewHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID := UserIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
 
 	var req domain.CreateReviewRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

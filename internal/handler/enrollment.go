@@ -3,8 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-
+	"github.com/andruho/courses/internal/domain"
 	"github.com/andruho/courses/internal/service"
 )
 
@@ -18,7 +17,11 @@ func NewEnrollmentHandler(enrollments service.EnrollmentService) *EnrollmentHand
 
 func (h *EnrollmentHandler) Enroll(w http.ResponseWriter, r *http.Request) {
 	userID := UserIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
 
 	if err := h.enrollments.Enroll(r.Context(), userID, courseID); err != nil {
 		writeError(w, err)

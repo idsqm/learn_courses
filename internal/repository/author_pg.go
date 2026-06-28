@@ -12,7 +12,7 @@ import (
 )
 
 type AuthorRepository interface {
-	GetByID(ctx context.Context, id string) (*domain.AuthorInfo, error)
+	GetByID(ctx context.Context, id int) (*domain.AuthorInfo, error)
 	Apply(ctx context.Context, userID string) error
 }
 
@@ -24,7 +24,7 @@ func NewAuthorRepository(pool *pgxpool.Pool) AuthorRepository {
 	return &authorRepo{pool: pool}
 }
 
-func (r *authorRepo) GetByID(ctx context.Context, id string) (*domain.AuthorInfo, error) {
+func (r *authorRepo) GetByID(ctx context.Context, id int) (*domain.AuthorInfo, error) {
 	var a domain.AuthorInfo
 	err := r.pool.QueryRow(ctx, `
 		SELECT a.id, a.name, a.initials, a.subtitle, a.bio,

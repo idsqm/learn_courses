@@ -9,8 +9,8 @@ ALTER TABLE reviews ADD COLUMN IF NOT EXISTS reply TEXT;
 ALTER TABLE reviews ADD COLUMN IF NOT EXISTS replied_at TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS payouts (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    author_id UUID NOT NULL REFERENCES authors(id),
+    id SERIAL PRIMARY KEY,
+    author_id INT NOT NULL REFERENCES authors(id),
     amount NUMERIC(10,2) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

@@ -13,7 +13,7 @@ type CourseFilter struct {
 }
 
 type CourseListItem struct {
-	ID            string   `json:"id"`
+	ID            int      `json:"id"`
 	Title         string   `json:"title"`
 	Author        string   `json:"author"`
 	Initials      string   `json:"initials"`
@@ -32,7 +32,7 @@ type CourseListItem struct {
 }
 
 type CourseDetail struct {
-	ID            string     `json:"id"`
+	ID            int        `json:"id"`
 	Title         string     `json:"title"`
 	Description   string     `json:"description"`
 	Category      string     `json:"category"`
@@ -63,7 +63,7 @@ type Module struct {
 }
 
 type Lesson struct {
-	ID       string `json:"id"`
+	ID       int    `json:"id"`
 	Name     string `json:"name"`
 	Duration string `json:"duration"`
 	IsFree   bool   `json:"is_free"`

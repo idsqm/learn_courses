@@ -11,8 +11,8 @@ import (
 )
 
 type FavoriteRepository interface {
-	Add(ctx context.Context, userID, courseID string) error
-	Remove(ctx context.Context, userID, courseID string) error
+	Add(ctx context.Context, userID string, courseID int) error
+	Remove(ctx context.Context, userID string, courseID int) error
 	ListByUser(ctx context.Context, userID string) ([]domain.CourseListItem, error)
 }
 
@@ -24,7 +24,7 @@ func NewFavoriteRepository(pool *pgxpool.Pool) FavoriteRepository {
 	return &favoriteRepo{pool: pool}
 }
 
-func (r *favoriteRepo) Add(ctx context.Context, userID, courseID string) error {
+func (r *favoriteRepo) Add(ctx context.Context, userID string, courseID int) error {
 	_, err := r.pool.Exec(ctx,
 		"INSERT INTO favorites (user_id, course_id) VALUES ($1, $2)", userID, courseID)
 	if err != nil {
@@ -37,7 +37,7 @@ func (r *favoriteRepo) Add(ctx context.Context, userID, courseID string) error {
 	return nil
 }
 
-func (r *favoriteRepo) Remove(ctx context.Context, userID, courseID string) error {
+func (r *favoriteRepo) Remove(ctx context.Context, userID string, courseID int) error {
 	tag, err := r.pool.Exec(ctx,
 		"DELETE FROM favorites WHERE user_id = $1 AND course_id = $2", userID, courseID)
 	if err != nil {

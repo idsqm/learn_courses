@@ -8,7 +8,7 @@ import (
 )
 
 type AuthorService interface {
-	GetByID(ctx context.Context, id string) (*domain.AuthorInfo, error)
+	GetByID(ctx context.Context, id int) (*domain.AuthorInfo, error)
 	Apply(ctx context.Context, userID string) error
 }
 
@@ -20,7 +20,7 @@ func NewAuthorService(authors repository.AuthorRepository) AuthorService {
 	return &authorService{authors: authors}
 }
 
-func (s *authorService) GetByID(ctx context.Context, id string) (*domain.AuthorInfo, error) {
+func (s *authorService) GetByID(ctx context.Context, id int) (*domain.AuthorInfo, error) {
 	return s.authors.GetByID(ctx, id)
 }
 

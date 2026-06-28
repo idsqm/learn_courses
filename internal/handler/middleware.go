@@ -20,12 +20,12 @@ func UserIDFromContext(ctx context.Context) string {
 	return v
 }
 
-func AuthorIDFromContext(ctx context.Context) string {
-	v, _ := ctx.Value(authorIDKey).(string)
+func AuthorIDFromContext(ctx context.Context) int {
+	v, _ := ctx.Value(authorIDKey).(int)
 	return v
 }
 
-type AuthorResolver func(ctx context.Context, userID string) (string, error)
+type AuthorResolver func(ctx context.Context, userID string) (int, error)
 
 func AuthorMiddleware(resolve AuthorResolver) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

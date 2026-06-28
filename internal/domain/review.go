@@ -1,7 +1,7 @@
 package domain
 
 type Review struct {
-	ID       string `json:"id"`
+	ID       int    `json:"id"`
 	Name     string `json:"name"`
 	Initials string `json:"initials"`
 	Text     string `json:"text"`

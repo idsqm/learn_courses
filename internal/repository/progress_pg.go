@@ -13,10 +13,10 @@ import (
 )
 
 type ProgressRepository interface {
-	CompleteLesson(ctx context.Context, userID, courseID, lessonID string) error
-	LessonExists(ctx context.Context, courseID, lessonID string) (bool, error)
-	GetCourseProgress(ctx context.Context, userID, courseID string) (*domain.CourseProgress, error)
-	IsFullyCompleted(ctx context.Context, userID, courseID string) (bool, error)
+	CompleteLesson(ctx context.Context, userID string, courseID, lessonID int) error
+	LessonExists(ctx context.Context, courseID, lessonID int) (bool, error)
+	GetCourseProgress(ctx context.Context, userID string, courseID int) (*domain.CourseProgress, error)
+	IsFullyCompleted(ctx context.Context, userID string, courseID int) (bool, error)
 	GetUserStats(ctx context.Context, userID string) (*domain.UserStats, error)
 }
 
@@ -28,7 +28,7 @@ func NewProgressRepository(pool *pgxpool.Pool) ProgressRepository {
 	return &progressRepo{pool: pool}
 }
 
-func (r *progressRepo) CompleteLesson(ctx context.Context, userID, courseID, lessonID string) error {
+func (r *progressRepo) CompleteLesson(ctx context.Context, userID string, courseID, lessonID int) error {
 	_, err := r.pool.Exec(ctx,
 		"INSERT INTO lesson_progress (user_id, course_id, lesson_id) VALUES ($1, $2, $3)",
 		userID, courseID, lessonID)
@@ -42,7 +42,7 @@ func (r *progressRepo) CompleteLesson(ctx context.Context, userID, courseID, les
 	return nil
 }
 
-func (r *progressRepo) LessonExists(ctx context.Context, courseID, lessonID string) (bool, error) {
+func (r *progressRepo) LessonExists(ctx context.Context, courseID, lessonID int) (bool, error) {
 	var exists bool
 	err := r.pool.QueryRow(ctx,
 		"SELECT EXISTS(SELECT 1 FROM lessons WHERE id = $1 AND course_id = $2)",
@@ -50,7 +50,7 @@ func (r *progressRepo) LessonExists(ctx context.Context, courseID, lessonID stri
 	return exists, err
 }
 
-func (r *progressRepo) GetCourseProgress(ctx context.Context, userID, courseID string) (*domain.CourseProgress, error) {
+func (r *progressRepo) GetCourseProgress(ctx context.Context, userID string, courseID int) (*domain.CourseProgress, error) {
 	var p domain.CourseProgress
 	p.CourseID = courseID
 
@@ -71,7 +71,7 @@ func (r *progressRepo) GetCourseProgress(ctx context.Context, userID, courseID s
 	return &p, nil
 }
 
-func (r *progressRepo) IsFullyCompleted(ctx context.Context, userID, courseID string) (bool, error) {
+func (r *progressRepo) IsFullyCompleted(ctx context.Context, userID string, courseID int) (bool, error) {
 	p, err := r.GetCourseProgress(ctx, userID, courseID)
 	if err != nil {
 		return false, err

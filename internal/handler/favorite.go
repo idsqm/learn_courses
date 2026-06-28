@@ -3,8 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-
+	"github.com/andruho/courses/internal/domain"
 	"github.com/andruho/courses/internal/service"
 )
 
@@ -18,7 +17,11 @@ func NewFavoriteHandler(favorites service.FavoriteService) *FavoriteHandler {
 
 func (h *FavoriteHandler) Add(w http.ResponseWriter, r *http.Request) {
 	userID := UserIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
 
 	if err := h.favorites.Add(r.Context(), userID, courseID); err != nil {
 		writeError(w, err)
@@ -30,7 +33,11 @@ func (h *FavoriteHandler) Add(w http.ResponseWriter, r *http.Request) {
 
 func (h *FavoriteHandler) Remove(w http.ResponseWriter, r *http.Request) {
 	userID := UserIDFromContext(r.Context())
-	courseID := chi.URLParam(r, "id")
+	courseID, err := intURLParam(r, "id")
+	if err != nil {
+		writeError(w, domain.ErrCourseNotFound)
+		return
+	}
 
 	if err := h.favorites.Remove(r.Context(), userID, courseID); err != nil {
 		writeError(w, err)

@@ -8,7 +8,7 @@ import (
 )
 
 type EnrollmentService interface {
-	Enroll(ctx context.Context, userID, courseID string) error
+	Enroll(ctx context.Context, userID string, courseID int) error
 	ListByUser(ctx context.Context, userID string) ([]domain.EnrolledCourse, error)
 }
 
@@ -21,7 +21,7 @@ func NewEnrollmentService(enrollments repository.EnrollmentRepository, courses r
 	return &enrollmentService{enrollments: enrollments, courses: courses}
 }
 
-func (s *enrollmentService) Enroll(ctx context.Context, userID, courseID string) error {
+func (s *enrollmentService) Enroll(ctx context.Context, userID string, courseID int) error {
 	exists, err := s.courses.Exists(ctx, courseID)
 	if err != nil {
 		return err

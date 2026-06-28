@@ -1,7 +1,7 @@
 package domain
 
 type CourseProgress struct {
-	CourseID     string  `json:"course_id"`
+	CourseID     int     `json:"course_id"`
 	Progress     float64 `json:"progress"`
 	DoneLessons  int     `json:"done_lessons"`
 	TotalLessons int     `json:"total_lessons"`

@@ -1,7 +1,7 @@
 package domain
 
 type AuthorInfo struct {
-	ID              string `json:"id"`
+	ID              int    `json:"id"`
 	Name            string `json:"name"`
 	Initials        string `json:"initials"`
 	Subtitle        string `json:"subtitle"`

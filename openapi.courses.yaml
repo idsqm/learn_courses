@@ -332,8 +332,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-            format: uuid
+            type: integer
       responses:
         "200":
           description: Lesson completed
@@ -448,8 +447,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-            format: uuid
+            type: integer
       responses:
         "200":
           description: Certificate details
@@ -547,8 +545,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-            format: uuid
+            type: integer
       responses:
         "200":
           description: Author profile
@@ -640,8 +637,7 @@ paths:
                 type: object
                 properties:
                   id:
-                    type: string
-                    format: uuid
+                    type: integer
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -795,8 +791,7 @@ paths:
                 type: object
                 properties:
                   id:
-                    type: string
-                    format: uuid
+                    type: integer
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -908,8 +903,7 @@ paths:
                 type: object
                 properties:
                   id:
-                    type: string
-                    format: uuid
+                    type: integer
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1117,8 +1111,7 @@ paths:
           in: path
           required: true
           schema:
-            type: string
-            format: uuid
+            type: integer
       requestBody:
         required: true
         content:
@@ -1168,22 +1161,19 @@ components:
       in: path
       required: true
       schema:
-        type: string
-        format: uuid
+        type: integer
     ModuleId:
       name: moduleId
       in: path
       required: true
       schema:
-        type: string
-        format: uuid
+        type: integer
     LessonId:
       name: lessonId
       in: path
       required: true
       schema:
-        type: string
-        format: uuid
+        type: integer
 
   schemas:
     # ── Course ───────────────────────────────────────────
@@ -1192,8 +1182,7 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
         title:
           type: string
           example: "Фотография: от новичка до профессионала"
@@ -1248,8 +1237,7 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
         title:
           type: string
         description:
@@ -1331,8 +1319,7 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
         name:
           type: string
           example: Выдержка, диафрагма и ISO
@@ -1348,8 +1335,7 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
         name:
           type: string
           example: Фотография
@@ -1369,8 +1355,7 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
         name:
           type: string
           example: Алексей Петров
@@ -1420,8 +1405,7 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
         name:
           type: string
           example: Сергей К.
@@ -1441,11 +1425,9 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
         course_id:
-          type: string
-          format: uuid
+          type: integer
         course_name:
           type: string
           example: "Фотография: от новичка до профессионала"
@@ -1459,8 +1441,7 @@ components:
       type: object
       properties:
         course_id:
-          type: string
-          format: uuid
+          type: integer
         progress:
           type: number
           format: float
@@ -1500,8 +1481,7 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
         title:
           type: string
           example: "Фотография: от новичка до профессионала"
@@ -1532,8 +1512,7 @@ components:
           type: string
           example: Для продвинутых фотографов
         category_id:
-          type: string
-          format: uuid
+          type: integer
         level:
           type: string
           enum: [Любой, Новичкам, Продвинутый]
@@ -1564,8 +1543,7 @@ components:
         subtitle:
           type: string
         category_id:
-          type: string
-          format: uuid
+          type: integer
         level:
           type: string
           enum: [Любой, Новичкам, Продвинутый]
@@ -1640,8 +1618,7 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
         amount:
           type: number
           example: 50000
@@ -1660,8 +1637,7 @@ components:
       type: object
       properties:
         id:
-          type: string
-          format: uuid
+          type: integer
         course_name:
           type: string
           example: "Фотография: от новичка до профессионала"

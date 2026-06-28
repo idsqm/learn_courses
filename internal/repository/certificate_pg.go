@@ -11,8 +11,8 @@ import (
 
 type CertificateRepository interface {
 	ListByUser(ctx context.Context, userID string) ([]domain.Certificate, error)
-	GetByID(ctx context.Context, userID, certID string) (*domain.Certificate, error)
-	Issue(ctx context.Context, userID, courseID string) error
+	GetByID(ctx context.Context, userID string, certID int) (*domain.Certificate, error)
+	Issue(ctx context.Context, userID string, courseID int) error
 }
 
 type certificateRepo struct {
@@ -50,7 +50,7 @@ func (r *certificateRepo) ListByUser(ctx context.Context, userID string) ([]doma
 	return certs, nil
 }
 
-func (r *certificateRepo) GetByID(ctx context.Context, userID, certID string) (*domain.Certificate, error) {
+func (r *certificateRepo) GetByID(ctx context.Context, userID string, certID int) (*domain.Certificate, error) {
 	var c domain.Certificate
 	err := r.pool.QueryRow(ctx, `
 		SELECT cert.id, cert.course_id, co.title, cert.issued_at
@@ -67,7 +67,7 @@ func (r *certificateRepo) GetByID(ctx context.Context, userID, certID string) (*
 	return &c, nil
 }
 
-func (r *certificateRepo) Issue(ctx context.Context, userID, courseID string) error {
+func (r *certificateRepo) Issue(ctx context.Context, userID string, courseID int) error {
 	_, err := r.pool.Exec(ctx,
 		"INSERT INTO certificates (user_id, course_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
 		userID, courseID)

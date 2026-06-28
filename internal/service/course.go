@@ -9,7 +9,7 @@ import (
 
 type CourseService interface {
 	List(ctx context.Context, f domain.CourseFilter) ([]domain.CourseListItem, int, error)
-	GetByID(ctx context.Context, id string) (*domain.CourseDetail, error)
+	GetByID(ctx context.Context, id int) (*domain.CourseDetail, error)
 	GetFeatured(ctx context.Context) ([]domain.CourseListItem, error)
 	GetRecommended(ctx context.Context, userID string) ([]domain.CourseListItem, error)
 }
@@ -32,7 +32,7 @@ func (s *courseService) List(ctx context.Context, f domain.CourseFilter) ([]doma
 	return s.courses.List(ctx, f)
 }
 
-func (s *courseService) GetByID(ctx context.Context, id string) (*domain.CourseDetail, error) {
+func (s *courseService) GetByID(ctx context.Context, id int) (*domain.CourseDetail, error) {
 	return s.courses.GetByID(ctx, id)
 }
 
