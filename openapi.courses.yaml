@@ -1,0 +1,1792 @@
+openapi: 3.0.3
+info:
+  title: Courses Service API
+  version: 2.0.0
+
+servers:
+  - url: http://localhost:8081
+    description: Local development
+
+paths:
+  # ── Courses (Public) ────────────────────────────────────
+
+  /api/v1/courses:
+    get:
+      summary: List courses with filtering, sorting and pagination
+      operationId: listCourses
+      tags: [courses]
+      parameters:
+        - name: category
+          in: query
+          description: Filter by category names (comma-separated)
+          schema:
+            type: string
+            example: Фотография,Дизайн
+        - name: level
+          in: query
+          schema:
+            type: string
+            enum: [Любой, Новичкам, Продвинутый]
+        - name: price_min
+          in: query
+          schema:
+            type: number
+            example: 990
+        - name: price_max
+          in: query
+          schema:
+            type: number
+            example: 3200
+        - name: rating_min
+          in: query
+          schema:
+            type: number
+            example: 4.0
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [популярные, новые, по цене, price_desc, по рейтингу]
+        - name: search
+          in: query
+          description: Full-text search by title and author name
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 12
+            maximum: 50
+      responses:
+        "200":
+          description: Paginated list of courses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CourseListItem"
+                  pagination:
+                    $ref: "#/components/schemas/Pagination"
+
+  /api/v1/courses/featured:
+    get:
+      summary: Popular courses for the home page
+      operationId: getFeaturedCourses
+      tags: [courses]
+      responses:
+        "200":
+          description: List of featured courses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CourseListItem"
+
+  /api/v1/courses/recommended:
+    get:
+      summary: Recommended courses for the authenticated user
+      operationId: getRecommendedCourses
+      tags: [courses]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of recommended courses (excludes already enrolled)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CourseListItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/courses/{id}:
+    get:
+      summary: Full course page
+      operationId: getCourse
+      tags: [courses]
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      responses:
+        "200":
+          description: Course details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseDetail"
+        "404":
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: COURSE_NOT_FOUND
+                  message: Course not found
+
+  # ── Categories ───────────────────────────────────────────
+
+  /api/v1/categories:
+    get:
+      summary: List all categories
+      operationId: listCategories
+      tags: [categories]
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Category"
+
+  # ── Enrollment ───────────────────────────────────────────
+
+  /api/v1/courses/{id}/enroll:
+    post:
+      summary: Enroll in a course (buy)
+      operationId: enroll
+      tags: [enrollment]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      responses:
+        "201":
+          description: Successfully enrolled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: COURSE_NOT_FOUND
+                  message: Course not found
+        "409":
+          description: Already enrolled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: ALREADY_ENROLLED
+                  message: You are already enrolled in this course
+
+  /api/v1/enrollments:
+    get:
+      summary: List user's enrolled courses
+      operationId: listEnrollments
+      tags: [enrollment]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of enrolled courses with progress
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EnrolledCourse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Favorites ────────────────────────────────────────────
+
+  /api/v1/courses/{id}/favorite:
+    post:
+      summary: Add course to favorites
+      operationId: addFavorite
+      tags: [favorites]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      responses:
+        "201":
+          description: Added to favorites
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: COURSE_NOT_FOUND
+                  message: Course not found
+        "409":
+          description: Already in favorites
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: ALREADY_FAVORITED
+                  message: Course is already in favorites
+
+    delete:
+      summary: Remove course from favorites
+      operationId: removeFavorite
+      tags: [favorites]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      responses:
+        "200":
+          description: Removed from favorites
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Course is not in favorites
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: NOT_FAVORITED
+                  message: Course is not in favorites
+
+  /api/v1/favorites:
+    get:
+      summary: List user's favorite courses
+      operationId: listFavorites
+      tags: [favorites]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of favorite courses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CourseListItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Progress ─────────────────────────────────────────────
+
+  /api/v1/courses/{id}/lessons/{lessonID}/complete:
+    post:
+      summary: Mark a lesson as completed
+      operationId: completeLesson
+      tags: [progress]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - name: lessonID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Lesson completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Not enrolled in the course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: NOT_ENROLLED
+                  message: You are not enrolled in this course
+        "404":
+          description: Lesson not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: LESSON_NOT_FOUND
+                  message: Lesson not found
+        "409":
+          description: Lesson already completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: ALREADY_COMPLETED
+                  message: Lesson is already completed
+
+  /api/v1/courses/{id}/progress:
+    get:
+      summary: Get progress for a specific course
+      operationId: getCourseProgress
+      tags: [progress]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      responses:
+        "200":
+          description: Course progress
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseProgress"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── User Stats ───────────────────────────────────────────
+
+  /api/v1/users/me/stats:
+    get:
+      summary: Get dashboard statistics for the authenticated user
+      operationId: getUserStats
+      tags: [stats]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserStats"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ── Certificates ─────────────────────────────────────────
+
+  /api/v1/certificates:
+    get:
+      summary: List user's certificates
+      operationId: listCertificates
+      tags: [certificates]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of certificates
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Certificate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/certificates/{id}:
+    get:
+      summary: Get a specific certificate
+      operationId: getCertificate
+      tags: [certificates]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Certificate details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Certificate"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Certificate not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: CERTIFICATE_NOT_FOUND
+                  message: Certificate not found
+
+  # ── Reviews ──────────────────────────────────────────────
+
+  /api/v1/courses/{id}/reviews:
+    post:
+      summary: Create a review for a course
+      operationId: createReview
+      tags: [reviews]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, initials, text, rating]
+              properties:
+                name:
+                  type: string
+                  example: Сергей К.
+                initials:
+                  type: string
+                  example: СК
+                text:
+                  type: string
+                  example: Отличный курс!
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  example: 5
+      responses:
+        "201":
+          description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: COURSE_NOT_FOUND
+                  message: Course not found
+        "409":
+          description: User already reviewed this course
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: REVIEW_ALREADY_EXISTS
+                  message: You have already reviewed this course
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  # ── Authors ──────────────────────────────────────────────
+
+  /api/v1/authors/{id}:
+    get:
+      summary: Get author profile
+      operationId: getAuthor
+      tags: [authors]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Author profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorInfo"
+        "404":
+          description: Author not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: AUTHOR_NOT_FOUND
+                  message: Author not found
+
+  /api/v1/authors/apply:
+    post:
+      summary: Apply to become an author
+      operationId: applyAsAuthor
+      tags: [authors]
+      security:
+        - bearerAuth: []
+      responses:
+        "201":
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Already applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: ALREADY_APPLIED
+                  message: You have already applied to become an author
+
+  # ── Studio: Courses ──────────────────────────────────────
+
+  /api/v1/studio/courses:
+    get:
+      summary: List author's courses
+      operationId: studioListCourses
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Author's courses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StudioCourse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      summary: Create a new course
+      operationId: studioCreateCourse
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCourseRequest"
+      responses:
+        "201":
+          description: Course created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/studio/courses/{id}:
+    put:
+      summary: Update a course
+      operationId: studioUpdateCourse
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCourseRequest"
+      responses:
+        "200":
+          description: Course updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Course not found or not owned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+    delete:
+      summary: Delete a course
+      operationId: studioDeleteCourse
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      responses:
+        "200":
+          description: Course deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Course not found or not owned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+
+  /api/v1/studio/courses/{id}/publish:
+    post:
+      summary: Publish a course
+      operationId: studioPublishCourse
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      responses:
+        "200":
+          description: Course published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+
+  /api/v1/studio/courses/{id}/unpublish:
+    post:
+      summary: Unpublish a course
+      operationId: studioUnpublishCourse
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      responses:
+        "200":
+          description: Course unpublished
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Course not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+
+  # ── Studio: Modules ──────────────────────────────────────
+
+  /api/v1/studio/courses/{id}/modules:
+    post:
+      summary: Add a module to a course
+      operationId: studioCreateModule
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+                  example: Введение
+                sort_order:
+                  type: integer
+                  example: 1
+      responses:
+        "201":
+          description: Module created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/studio/courses/{id}/modules/{moduleId}:
+    put:
+      summary: Update a module
+      operationId: studioUpdateModule
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - $ref: "#/components/parameters/ModuleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                sort_order:
+                  type: integer
+      responses:
+        "200":
+          description: Module updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Module not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+    delete:
+      summary: Delete a module
+      operationId: studioDeleteModule
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - $ref: "#/components/parameters/ModuleId"
+      responses:
+        "200":
+          description: Module deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Module not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+
+  # ── Studio: Lessons ──────────────────────────────────────
+
+  /api/v1/studio/courses/{id}/modules/{moduleId}/lessons:
+    post:
+      summary: Add a lesson to a module
+      operationId: studioCreateLesson
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - $ref: "#/components/parameters/ModuleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: Основы экспозиции
+                type:
+                  type: string
+                  enum: [video, quiz, text]
+                  default: video
+                is_free:
+                  type: boolean
+                  default: false
+      responses:
+        "201":
+          description: Lesson created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/studio/courses/{id}/lessons/{lessonId}:
+    put:
+      summary: Update a lesson
+      operationId: studioUpdateLesson
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - $ref: "#/components/parameters/LessonId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                  enum: [video, quiz, text]
+                is_free:
+                  type: boolean
+                duration_minutes:
+                  type: integer
+                sort_order:
+                  type: integer
+      responses:
+        "200":
+          description: Lesson updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Lesson not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+    delete:
+      summary: Delete a lesson
+      operationId: studioDeleteLesson
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - $ref: "#/components/parameters/LessonId"
+      responses:
+        "200":
+          description: Lesson deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Lesson not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+
+  # ── Studio: Stats ────────────────────────────────────────
+
+  /api/v1/studio/stats:
+    get:
+      summary: Author dashboard statistics
+      operationId: studioGetStats
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Author statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudioStats"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/studio/students:
+    get:
+      summary: List students across all author's courses
+      operationId: studioListStudents
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of students
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StudioStudent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Studio: Income ───────────────────────────────────────
+
+  /api/v1/studio/income:
+    get:
+      summary: Author income summary
+      operationId: studioGetIncome
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Income data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudioIncome"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/studio/payouts:
+    get:
+      summary: Payout history
+      operationId: studioListPayouts
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Payout history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Payout"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ── Studio: Reviews ──────────────────────────────────────
+
+  /api/v1/studio/reviews:
+    get:
+      summary: Reviews across all author's courses
+      operationId: studioListReviews
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of reviews
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/StudioReview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/studio/reviews/{id}/reply:
+    post:
+      summary: Reply to a review
+      operationId: studioReplyToReview
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reply]
+              properties:
+                reply:
+                  type: string
+                  example: Спасибо за отзыв!
+      responses:
+        "200":
+          description: Reply added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Review not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+              example:
+                error:
+                  code: REVIEW_NOT_FOUND
+                  message: Review not found
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token issued by the Auth Service
+
+  parameters:
+    CourseId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ModuleId:
+      name: moduleId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    LessonId:
+      name: lessonId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    # ── Course ───────────────────────────────────────────
+
+    CourseListItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: "Фотография: от новичка до профессионала"
+        author:
+          type: string
+          example: Алексей Петров
+        initials:
+          type: string
+          example: АП
+        category:
+          type: string
+          example: Фотография
+        level:
+          type: string
+          enum: [Любой, Новичкам, Продвинутый]
+        price:
+          type: number
+          example: 2490
+        old_price:
+          type: number
+          nullable: true
+          example: 3200
+        rating:
+          type: number
+          format: float
+          example: 4.67
+        reviews_count:
+          type: integer
+          example: 3
+        students_count:
+          type: integer
+          example: 42
+        hours:
+          type: integer
+          example: 8
+        lessons_count:
+          type: integer
+          example: 15
+        color_1:
+          type: string
+          example: "#6366f1"
+        color_2:
+          type: string
+          example: "#8b5cf6"
+        tag:
+          type: string
+          nullable: true
+          enum: [Бестселлер, Новинка, Популярное]
+          example: Бестселлер
+
+    CourseDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        level:
+          type: string
+        price:
+          type: number
+        old_price:
+          type: number
+          nullable: true
+        rating:
+          type: number
+          format: float
+        reviews_count:
+          type: integer
+        students_count:
+          type: integer
+        hours:
+          type: integer
+        lessons_count:
+          type: integer
+        color_1:
+          type: string
+        color_2:
+          type: string
+        tag:
+          type: string
+          nullable: true
+        preview_url:
+          type: string
+          nullable: true
+        learn_items:
+          type: array
+          items:
+            type: string
+          example:
+            - "Настройка камеры: выдержка, диафрагма, ISO"
+            - "Работа со светом: естественный и искусственный"
+        curriculum:
+          type: array
+          items:
+            $ref: "#/components/schemas/Module"
+        includes:
+          type: array
+          items:
+            type: string
+          example:
+            - "42 часа видео"
+            - "15 практических заданий"
+            - "Сертификат о прохождении"
+        reviews:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        author:
+          $ref: "#/components/schemas/AuthorInfo"
+
+    Module:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Основы фотографии
+        duration:
+          type: string
+          example: 1 ч 30 мин
+        lessons_count:
+          type: integer
+          example: 3
+        lessons:
+          type: array
+          items:
+            $ref: "#/components/schemas/Lesson"
+
+    Lesson:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Выдержка, диафрагма и ISO
+        duration:
+          type: string
+          example: 20 мин
+        is_free:
+          type: boolean
+
+    # ── Category ─────────────────────────────────────────
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Фотография
+        abbreviation:
+          type: string
+          example: ФО
+        courses_count:
+          type: integer
+          example: 1
+        color:
+          type: string
+          example: "#f59e0b"
+
+    # ── Author ───────────────────────────────────────────
+
+    AuthorInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Алексей Петров
+        initials:
+          type: string
+          example: АП
+        subtitle:
+          type: string
+          example: Профессиональный фотограф и видеограф
+        bio:
+          type: string
+        courses_count:
+          type: integer
+          example: 4
+        years_experience:
+          type: integer
+          example: 10
+
+    # ── Enrollment ───────────────────────────────────────
+
+    EnrolledCourse:
+      type: object
+      properties:
+        course:
+          $ref: "#/components/schemas/CourseListItem"
+        progress:
+          type: number
+          format: float
+          description: Completion percentage (0–100)
+          example: 33.3
+        done_lessons:
+          type: integer
+          example: 5
+        total_lessons:
+          type: integer
+          example: 15
+        last_lesson:
+          type: string
+          nullable: true
+          example: Выдержка, диафрагма и ISO
+        completed:
+          type: boolean
+
+    # ── Review ───────────────────────────────────────────
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Сергей К.
+        initials:
+          type: string
+          example: СК
+        text:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+
+    # ── Certificate ──────────────────────────────────────
+
+    Certificate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        course_id:
+          type: string
+          format: uuid
+        course_name:
+          type: string
+          example: "Фотография: от новичка до профессионала"
+        issued_at:
+          type: string
+          format: date-time
+
+    # ── Progress ─────────────────────────────────────────
+
+    CourseProgress:
+      type: object
+      properties:
+        course_id:
+          type: string
+          format: uuid
+        progress:
+          type: number
+          format: float
+          description: Completion percentage (0–100)
+          example: 6.67
+        done_lessons:
+          type: integer
+          example: 1
+        total_lessons:
+          type: integer
+          example: 15
+        completed:
+          type: boolean
+
+    # ── Stats ────────────────────────────────────────────
+
+    UserStats:
+      type: object
+      properties:
+        courses_in_progress:
+          type: integer
+          example: 2
+        total_study_time:
+          type: integer
+          description: Total study time in minutes
+          example: 120
+        certificates_count:
+          type: integer
+          example: 1
+        study_streak_days:
+          type: integer
+          example: 5
+
+    # ── Studio ───────────────────────────────────────────
+
+    StudioCourse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: "Фотография: от новичка до профессионала"
+        category:
+          type: string
+          example: Фотография
+        lessons_count:
+          type: integer
+          example: 15
+        students_count:
+          type: integer
+          example: 42
+        revenue_30d:
+          type: number
+          example: 74700
+        status:
+          type: string
+          enum: [draft, published]
+
+    CreateCourseRequest:
+      type: object
+      required: [title, category_id]
+      properties:
+        title:
+          type: string
+          example: Новый курс по фотографии
+        subtitle:
+          type: string
+          example: Для продвинутых фотографов
+        category_id:
+          type: string
+          format: uuid
+        level:
+          type: string
+          enum: [Любой, Новичкам, Продвинутый]
+          default: Любой
+        description:
+          type: string
+        price:
+          type: number
+          example: 1990
+        old_price:
+          type: number
+          nullable: true
+        is_free:
+          type: boolean
+          default: false
+        color_1:
+          type: string
+          example: "#6366f1"
+        color_2:
+          type: string
+          example: "#8b5cf6"
+
+    UpdateCourseRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        subtitle:
+          type: string
+        category_id:
+          type: string
+          format: uuid
+        level:
+          type: string
+          enum: [Любой, Новичкам, Продвинутый]
+        description:
+          type: string
+        price:
+          type: number
+        old_price:
+          type: number
+          nullable: true
+        is_free:
+          type: boolean
+        color_1:
+          type: string
+        color_2:
+          type: string
+        tag:
+          type: string
+          nullable: true
+          enum: [Бестселлер, Новинка, Популярное]
+
+    StudioStats:
+      type: object
+      properties:
+        revenue_30d:
+          type: number
+          example: 74700
+        new_students_30d:
+          type: integer
+          example: 30
+        total_students:
+          type: integer
+          example: 150
+        avg_rating:
+          type: number
+          format: float
+          example: 4.8
+
+    StudioStudent:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        course:
+          type: string
+          example: "Фотография: от новичка до профессионала"
+        progress:
+          type: number
+          format: float
+          example: 33.3
+        last_active:
+          type: string
+          format: date-time
+
+    StudioIncome:
+      type: object
+      properties:
+        available:
+          type: number
+          description: Available for withdrawal
+          example: 120000
+        monthly_revenue:
+          type: number
+          description: Revenue for current month
+          example: 74700
+        sales_count:
+          type: integer
+          example: 150
+
+    Payout:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          example: 50000
+        status:
+          type: string
+          enum: [pending, completed, rejected]
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    StudioReview:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        course_name:
+          type: string
+          example: "Фотография: от новичка до профессионала"
+        name:
+          type: string
+          example: Сергей К.
+        initials:
+          type: string
+          example: СК
+        text:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        reply:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    # ── Pagination ───────────────────────────────────────
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 12
+        total:
+          type: integer
+          example: 42
+        total_pages:
+          type: integer
+          example: 4
+
+    # ── Common ───────────────────────────────────────────
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+    AppError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+                - COURSE_NOT_FOUND
+                - CATEGORY_NOT_FOUND
+                - ALREADY_ENROLLED
+                - NOT_ENROLLED
+                - LESSON_NOT_FOUND
+                - ALREADY_COMPLETED
+                - CERTIFICATE_NOT_FOUND
+                - AUTHOR_NOT_FOUND
+                - ALREADY_APPLIED
+                - ALREADY_FAVORITED
+                - NOT_FAVORITED
+                - REVIEW_ALREADY_EXISTS
+                - REVIEW_NOT_FOUND
+                - NOT_AUTHOR
+                - COURSE_NOT_OWNED
+                - MODULE_NOT_FOUND
+                - ACCESS_TOKEN_EXPIRED
+                - ACCESS_TOKEN_INVALID
+                - INTERNAL_ERROR
+            message:
+              type: string
+
+    ValidationError:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          example:
+            text: [required]
+            rating: ["must be between 1 and 5"]
+
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationError"
+
+    Unauthorized:
+      description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AppError"
+          examples:
+            expired:
+              value:
+                error:
+                  code: ACCESS_TOKEN_EXPIRED
+                  message: Access token has expired
+            invalid:
+              value:
+                error:
+                  code: ACCESS_TOKEN_INVALID
+                  message: Access token is invalid
+
+    Forbidden:
+      description: Not an approved author
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/AppError"
+          example:
+            error:
+              code: NOT_AUTHOR
+              message: You are not an approved author
