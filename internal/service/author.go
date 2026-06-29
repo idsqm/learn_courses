@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/andruho/courses/internal/domain"
@@ -30,29 +29,35 @@ func (s *authorService) GetByID(ctx context.Context, id int) (*domain.AuthorInfo
 }
 
 func (s *authorService) Apply(ctx context.Context, userID string, req domain.ApplyAuthorRequest) error {
+	if err := s.updateRole(ctx, userID); err != nil {
+		return err
+	}
+
 	if err := s.authors.Apply(ctx, userID, req); err != nil {
 		return err
 	}
 
+	return nil
+}
+
+func (s *authorService) updateRole(ctx context.Context, userID string) error {
 	url := fmt.Sprintf("%s/api/v1/auth/users/%s/role", s.authURL, userID)
 	body := []byte(`{"role":"author"}`)
 
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewReader(body))
 	if err != nil {
-		slog.Error("failed to create auth service request", "error", err, "userID", userID)
-		return nil
+		return fmt.Errorf("create role request: %w", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
-		slog.Error("failed to call auth service to set author role", "error", err, "userID", userID)
-		return nil
+		return fmt.Errorf("auth service unavailable: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		slog.Error("auth service returned non-OK status for role update", "status", resp.StatusCode, "userID", userID)
+		return fmt.Errorf("auth service returned status %d", resp.StatusCode)
 	}
 
 	return nil
