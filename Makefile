@@ -44,7 +44,7 @@ prod-build:
 	$(PROD) build
 
 prod-migrate-up:
-	$(PROD) run --rm courses-app goose -dir /migrations postgres "$(DB_URL_DOCKER)" up
+	$(PROD) run --rm --entrypoint goose courses-app -dir /migrations postgres "$(DB_URL_DOCKER)" up
 
 prod-migrate-down:
-	$(PROD) run --rm courses-app goose -dir /migrations postgres "$(DB_URL_DOCKER)" down
+	$(PROD) run --rm --entrypoint goose courses-app -dir /migrations postgres "$(DB_URL_DOCKER)" down
