@@ -1,5 +1,5 @@
 services:
-  app:
+  courses-app:
     build:
       context: .
       target: runner
@@ -9,12 +9,13 @@ services:
       SERVER_PORT: ${SERVER_PORT:-8081}
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@courses-db:5432/${POSTGRES_DB}?sslmode=disable
       JWT_SECRET: ${JWT_SECRET}
+      AUTH_SERVICE_URL: http://auth-app:8080
     restart: unless-stopped
     depends_on:
       courses-db:
         condition: service_healthy
     networks:
-      - courses-backend
+      - learnquest
 
   courses-db:
     image: postgres:16
@@ -31,13 +32,11 @@ services:
       retries: 5
     restart: unless-stopped
     networks:
-      - courses-backend
       - learnquest
 
 volumes:
   pgdata:
 
 networks:
-  courses-backend:
   learnquest:
     external: true
