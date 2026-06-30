@@ -27,6 +27,8 @@ type StudioCourseDetail struct {
 	Color2      string   `json:"color_2"`
 	Tag         *string  `json:"tag,omitempty"`
 	Published   bool     `json:"published"`
+	LearnItems  []string `json:"learn_items"`
+	Includes    []string `json:"includes"`
 	Curriculum  []Module `json:"curriculum"`
 }
 
@@ -41,20 +43,24 @@ type CreateCourseRequest struct {
 	IsFree      bool     `json:"is_free"`
 	Color1      string   `json:"color_1"`
 	Color2      string   `json:"color_2"`
+	LearnItems  []string `json:"learn_items"`
+	Includes    []string `json:"includes"`
 }
 
 type UpdateCourseRequest struct {
-	Title       *string  `json:"title"`
-	Subtitle    *string  `json:"subtitle"`
-	CategoryID  *int     `json:"category_id"`
-	Level       *string  `json:"level"`
-	Description *string  `json:"description"`
-	Price       *float64 `json:"price"`
-	OldPrice    *float64 `json:"old_price"`
-	IsFree      *bool    `json:"is_free"`
-	Color1      *string  `json:"color_1"`
-	Color2      *string  `json:"color_2"`
-	Tag         *string  `json:"tag"`
+	Title       *string   `json:"title"`
+	Subtitle    *string   `json:"subtitle"`
+	CategoryID  *int      `json:"category_id"`
+	Level       *string   `json:"level"`
+	Description *string   `json:"description"`
+	Price       *float64  `json:"price"`
+	OldPrice    *float64  `json:"old_price"`
+	IsFree      *bool     `json:"is_free"`
+	Color1      *string   `json:"color_1"`
+	Color2      *string   `json:"color_2"`
+	Tag         *string   `json:"tag"`
+	LearnItems  *[]string `json:"learn_items"`
+	Includes    *[]string `json:"includes"`
 }
 
 type StudioStats struct {

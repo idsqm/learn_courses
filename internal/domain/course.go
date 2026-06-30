@@ -56,6 +56,7 @@ type CourseDetail struct {
 }
 
 type Module struct {
+	ID           int      `json:"id,omitempty"`
 	Title        string   `json:"title"`
 	Duration     string   `json:"duration"`
 	LessonsCount int      `json:"lessons_count"`
@@ -65,6 +66,7 @@ type Module struct {
 type Lesson struct {
 	ID       int    `json:"id"`
 	Name     string `json:"name"`
+	Type     string `json:"type,omitempty"`
 	Duration string `json:"duration"`
 	IsFree   bool   `json:"is_free"`
 }

@@ -67,8 +67,9 @@ var (
 
 // Studio
 var (
-	ErrModuleNotFound = NewAppError("MODULE_NOT_FOUND", "Module not found", 404)
-	ErrReviewNotFound = NewAppError("REVIEW_NOT_FOUND", "Review not found", 404)
+	ErrModuleNotFound   = NewAppError("MODULE_NOT_FOUND", "Module not found", 404)
+	ErrReviewNotFound   = NewAppError("REVIEW_NOT_FOUND", "Review not found", 404)
+	ErrQuestionNotFound = NewAppError("QUESTION_NOT_FOUND", "Question not found", 404)
 )
 
 // Auth

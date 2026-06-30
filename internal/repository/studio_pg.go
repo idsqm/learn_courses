@@ -140,7 +140,7 @@ func (r *studioRepo) GetCourse(ctx context.Context, authorID, courseID int) (*do
 	d.Curriculum = make([]domain.Module, 0, len(mods))
 	for _, m := range mods {
 		lessonRows, err := r.pool.Query(ctx,
-			"SELECT id, name, duration_minutes, is_free FROM lessons WHERE module_id = $1 ORDER BY sort_order", m.id)
+			"SELECT id, name, type, duration_minutes, is_free FROM lessons WHERE module_id = $1 ORDER BY sort_order", m.id)
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +149,7 @@ func (r *studioRepo) GetCourse(ctx context.Context, authorID, courseID int) (*do
 		for lessonRows.Next() {
 			var l domain.Lesson
 			var dur int
-			if err := lessonRows.Scan(&l.ID, &l.Name, &dur, &l.IsFree); err != nil {
+			if err := lessonRows.Scan(&l.ID, &l.Name, &l.Type, &dur, &l.IsFree); err != nil {
 				lessonRows.Close()
 				return nil, err
 			}
@@ -162,6 +162,7 @@ func (r *studioRepo) GetCourse(ctx context.Context, authorID, courseID int) (*do
 			lessons = []domain.Lesson{}
 		}
 		d.Curriculum = append(d.Curriculum, domain.Module{
+			ID:           m.id,
 			Title:        m.title,
 			Duration:     formatDuration(totalMin),
 			LessonsCount: len(lessons),
@@ -169,7 +170,34 @@ func (r *studioRepo) GetCourse(ctx context.Context, authorID, courseID int) (*do
 		})
 	}
 
+	d.LearnItems, err = r.getStringList(ctx, "SELECT text FROM course_learn_items WHERE course_id = $1 ORDER BY sort_order", courseID)
+	if err != nil {
+		return nil, err
+	}
+	d.Includes, err = r.getStringList(ctx, "SELECT text FROM course_includes WHERE course_id = $1 ORDER BY sort_order", courseID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &d, nil
+}
+
+func (r *studioRepo) getStringList(ctx context.Context, query string, courseID int) ([]string, error) {
+	rows, err := r.pool.Query(ctx, query, courseID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := []string{}
+	for rows.Next() {
+		var s string
+		if err := rows.Scan(&s); err != nil {
+			return nil, err
+		}
+		items = append(items, s)
+	}
+	return items, nil
 }
 
 func (r *studioRepo) CreateCourse(ctx context.Context, authorID int, req domain.CreateCourseRequest) (int, error) {
@@ -189,10 +217,29 @@ func (r *studioRepo) CreateCourse(ctx context.Context, authorID int, req domain.
 		RETURNING id
 	`, req.Title, req.Subtitle, req.Description, authorID, req.CategoryID,
 		req.Level, req.Price, req.OldPrice, req.IsFree, color1, color2).Scan(&id)
-	return id, err
+	if err != nil {
+		return 0, err
+	}
+
+	if len(req.LearnItems) > 0 {
+		if err := r.replaceStringList(ctx, "course_learn_items", id, req.LearnItems); err != nil {
+			return 0, err
+		}
+	}
+	if len(req.Includes) > 0 {
+		if err := r.replaceStringList(ctx, "course_includes", id, req.Includes); err != nil {
+			return 0, err
+		}
+	}
+
+	return id, nil
 }
 
 func (r *studioRepo) UpdateCourse(ctx context.Context, authorID, courseID int, req domain.UpdateCourseRequest) error {
+	if err := r.verifyCourseOwner(ctx, authorID, courseID); err != nil {
+		return err
+	}
+
 	sets := []string{}
 	args := []any{}
 	idx := 1
@@ -237,21 +284,43 @@ func (r *studioRepo) UpdateCourse(ctx context.Context, authorID, courseID int, r
 		add("tag", *req.Tag)
 	}
 
-	if len(sets) == 0 {
-		return nil
+	if len(sets) > 0 {
+		sets = append(sets, "updated_at = NOW()")
+		query := fmt.Sprintf("UPDATE courses SET %s WHERE id = $%d AND author_id = $%d",
+			strings.Join(sets, ", "), idx, idx+1)
+		args = append(args, courseID, authorID)
+
+		if _, err := r.pool.Exec(ctx, query, args...); err != nil {
+			return err
+		}
 	}
 
-	sets = append(sets, "updated_at = NOW()")
-	query := fmt.Sprintf("UPDATE courses SET %s WHERE id = $%d AND author_id = $%d",
-		strings.Join(sets, ", "), idx, idx+1)
-	args = append(args, courseID, authorID)
+	if req.LearnItems != nil {
+		if err := r.replaceStringList(ctx, "course_learn_items", courseID, *req.LearnItems); err != nil {
+			return err
+		}
+	}
+	if req.Includes != nil {
+		if err := r.replaceStringList(ctx, "course_includes", courseID, *req.Includes); err != nil {
+			return err
+		}
+	}
 
-	tag, err := r.pool.Exec(ctx, query, args...)
-	if err != nil {
+	return nil
+}
+
+// replaceStringList overwrites a course's child rows (learn items / includes) with the given list.
+// table must be a fixed internal constant, never user input.
+func (r *studioRepo) replaceStringList(ctx context.Context, table string, courseID int, items []string) error {
+	if _, err := r.pool.Exec(ctx, fmt.Sprintf("DELETE FROM %s WHERE course_id = $1", table), courseID); err != nil {
 		return err
 	}
-	if tag.RowsAffected() == 0 {
-		return domain.ErrCourseNotFound
+	for i, text := range items {
+		if _, err := r.pool.Exec(ctx,
+			fmt.Sprintf("INSERT INTO %s (course_id, text, sort_order) VALUES ($1, $2, $3)", table),
+			courseID, text, i); err != nil {
+			return err
+		}
 	}
 	return nil
 }

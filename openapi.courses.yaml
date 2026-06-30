@@ -914,7 +914,7 @@ paths:
                   example: Основы экспозиции
                 type:
                   type: string
-                  enum: [video, quiz, text]
+                  enum: [video, text, quiz, assignment]
                   default: video
                 is_free:
                   type: boolean
@@ -957,7 +957,7 @@ paths:
                   type: string
                 type:
                   type: string
-                  enum: [video, quiz, text]
+                  enum: [video, text, quiz, assignment]
                 is_free:
                   type: boolean
                 duration_minutes:
@@ -1003,6 +1003,165 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           description: Lesson not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+
+  # ── Studio: Lesson Content ────────────────────────────────
+
+  /api/v1/studio/courses/{id}/lessons/{lessonId}/detail:
+    get:
+      summary: Get full lesson detail (content + questions)
+      operationId: studioGetLessonDetail
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - $ref: "#/components/parameters/LessonId"
+      responses:
+        "200":
+          description: Lesson with content and questions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LessonDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Lesson not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+
+  /api/v1/studio/courses/{id}/lessons/{lessonId}/content:
+    put:
+      summary: Save lesson content (video URL or text body)
+      operationId: studioSaveLessonContent
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - $ref: "#/components/parameters/LessonId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                video_url:
+                  type: string
+                  description: For video lessons
+                  example: https://youtube.com/watch?v=xxx
+                body:
+                  type: string
+                  description: For text lessons or assignment description
+      responses:
+        "200":
+          description: Content saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/v1/studio/courses/{id}/lessons/{lessonId}/questions:
+    post:
+      summary: Add a quiz question with options
+      operationId: studioCreateQuestion
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - $ref: "#/components/parameters/LessonId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveQuizQuestionRequest"
+      responses:
+        "201":
+          description: Question created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+
+  /api/v1/studio/courses/{id}/questions/{questionId}:
+    put:
+      summary: Update a quiz question (replaces options)
+      operationId: studioUpdateQuestion
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - $ref: "#/components/parameters/QuestionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveQuizQuestionRequest"
+      responses:
+        "200":
+          description: Question updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Question not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppError"
+    delete:
+      summary: Delete a quiz question
+      operationId: studioDeleteQuestion
+      tags: [studio]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/CourseId"
+        - $ref: "#/components/parameters/QuestionId"
+      responses:
+        "200":
+          description: Question deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Question not found
           content:
             application/json:
               schema:
@@ -1195,6 +1354,12 @@ components:
         type: integer
     LessonId:
       name: lessonId
+      in: path
+      required: true
+      schema:
+        type: integer
+    QuestionId:
+      name: questionId
       in: path
       required: true
       schema:
@@ -1561,6 +1726,21 @@ components:
           enum: [Бестселлер, Новинка, Популярное]
         published:
           type: boolean
+        learn_items:
+          type: array
+          items:
+            type: string
+          example:
+            - "Настройка камеры: выдержка, диафрагма, ISO"
+            - "Работа со светом: естественный и искусственный"
+        includes:
+          type: array
+          items:
+            type: string
+          example:
+            - "42 часа видео"
+            - "15 практических заданий"
+            - "Сертификат о прохождении"
         curriculum:
           type: array
           items:
@@ -1599,6 +1779,14 @@ components:
         color_2:
           type: string
           example: "#8b5cf6"
+        learn_items:
+          type: array
+          items:
+            type: string
+        includes:
+          type: array
+          items:
+            type: string
 
     UpdateCourseRequest:
       type: object
@@ -1625,6 +1813,14 @@ components:
           type: string
         color_2:
           type: string
+        learn_items:
+          type: array
+          items:
+            type: string
+        includes:
+          type: array
+          items:
+            type: string
         tag:
           type: string
           nullable: true
@@ -1725,6 +1921,105 @@ components:
           type: string
           format: date-time
 
+    # ── Lesson Content ───────────────────────────────────
+
+    LessonDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [video, text, quiz, assignment]
+        duration_minutes:
+          type: integer
+        is_free:
+          type: boolean
+        sort_order:
+          type: integer
+        content:
+          $ref: "#/components/schemas/LessonContent"
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuizQuestion"
+
+    LessonContent:
+      type: object
+      nullable: true
+      properties:
+        id:
+          type: integer
+        lesson_id:
+          type: integer
+        video_url:
+          type: string
+          nullable: true
+        body:
+          type: string
+          nullable: true
+
+    QuizQuestion:
+      type: object
+      properties:
+        id:
+          type: integer
+        lesson_id:
+          type: integer
+        text:
+          type: string
+        question_type:
+          type: string
+          enum: [single, multiple, input]
+        points:
+          type: integer
+          example: 1
+        sort_order:
+          type: integer
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuizOption"
+
+    QuizOption:
+      type: object
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+        is_correct:
+          type: boolean
+        sort_order:
+          type: integer
+
+    SaveQuizQuestionRequest:
+      type: object
+      required: [text, question_type]
+      properties:
+        text:
+          type: string
+          example: Что такое выдержка?
+        question_type:
+          type: string
+          enum: [single, multiple, input]
+        points:
+          type: integer
+          default: 1
+        options:
+          type: array
+          items:
+            type: object
+            required: [text]
+            properties:
+              text:
+                type: string
+              is_correct:
+                type: boolean
+                default: false
+
     # ── Pagination ───────────────────────────────────────
 
     Pagination:
@@ -1776,6 +2071,7 @@ components:
                 - NOT_AUTHOR
                 - COURSE_NOT_OWNED
                 - MODULE_NOT_FOUND
+                - QUESTION_NOT_FOUND
                 - ACCESS_TOKEN_EXPIRED
                 - ACCESS_TOKEN_INVALID
                 - INTERNAL_ERROR

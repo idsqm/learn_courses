@@ -57,6 +57,7 @@ func main() {
 	authors := repository.NewAuthorRepository(pool)
 	progress := repository.NewProgressRepository(pool)
 	studioRepo := repository.NewStudioRepository(pool)
+	lessonContentRepo := repository.NewLessonContentRepository(pool)
 
 	// Services
 	courseSvc := service.NewCourseService(courses)
@@ -68,12 +69,13 @@ func main() {
 	authorSvc := service.NewAuthorService(authors, cfg.AuthServiceURL)
 	progressSvc := service.NewProgressService(progress, certificates, enrollments)
 	studioSvc := service.NewStudioService(studioRepo)
+	contentSvc := service.NewLessonContentService(lessonContentRepo)
 
 	// Router
 	router := handler.NewRouter(
 		courseSvc, categorySvc, enrollmentSvc, favoriteSvc,
 		reviewSvc, certificateSvc, authorSvc, progressSvc,
-		studioSvc, cfg.JWTSecret,
+		studioSvc, contentSvc, cfg.JWTSecret,
 	)
 
 	srv := &http.Server{
@@ -138,6 +140,7 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool, log *slog.Logger) er
 	for _, path := range []string{
 		"migrations/20260620001_init.sql",
 		"migrations/20260620003_studio.sql",
+		"migrations/20260628001_lesson_content.sql",
 	} {
 		raw, err := os.ReadFile(path)
 		if err != nil {

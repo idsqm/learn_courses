@@ -20,6 +20,7 @@ func NewRouter(
 	authorSvc service.AuthorService,
 	progressSvc service.ProgressService,
 	studioSvc service.StudioService,
+	contentSvc service.LessonContentService,
 	jwtSecret string,
 ) http.Handler {
 	r := chi.NewRouter()
@@ -102,6 +103,14 @@ func NewRouter(
 			r.Post("/courses/{id}/modules/{moduleId}/lessons", studio.CreateLesson)
 			r.Put("/courses/{id}/lessons/{lessonId}", studio.UpdateLesson)
 			r.Delete("/courses/{id}/lessons/{lessonId}", studio.DeleteLesson)
+
+			content := NewLessonContentHandler(contentSvc)
+
+			r.Get("/courses/{id}/lessons/{lessonId}/detail", content.GetLessonDetail)
+			r.Put("/courses/{id}/lessons/{lessonId}/content", content.SaveContent)
+			r.Post("/courses/{id}/lessons/{lessonId}/questions", content.CreateQuestion)
+			r.Put("/courses/{id}/questions/{questionId}", content.UpdateQuestion)
+			r.Delete("/courses/{id}/questions/{questionId}", content.DeleteQuestion)
 
 			r.Get("/stats", studio.GetStats)
 			r.Get("/students", studio.ListStudents)
