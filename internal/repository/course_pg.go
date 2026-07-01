@@ -36,7 +36,7 @@ const courseListSelect = `
 		COALESCE(sub_e.cnt, 0)::int,
 		(COALESCE(sub_l.total_dur, 0) / 60)::int,
 		COALESCE(sub_l.cnt, 0)::int,
-		c.color_1, c.color_2, c.tag
+		c.color_1, c.color_2, c.tag, c.preview_url
 	FROM courses c
 	JOIN authors a ON c.author_id = a.id
 	JOIN categories cat ON c.category_id = cat.id
@@ -352,7 +352,7 @@ func scanCourseList(rows pgx.Rows) ([]domain.CourseListItem, error) {
 			&c.Category, &c.Level, &c.Price, &c.OldPrice,
 			&c.Rating, &c.ReviewsCount, &c.StudentsCount,
 			&c.Hours, &c.LessonsCount,
-			&c.Color1, &c.Color2, &c.Tag,
+			&c.Color1, &c.Color2, &c.Tag, &c.PreviewURL,
 		); err != nil {
 			return nil, err
 		}

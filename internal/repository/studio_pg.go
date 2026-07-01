@@ -68,7 +68,8 @@ func (r *studioRepo) ListCourses(ctx context.Context, authorID int) ([]domain.St
 			COALESCE(sub_l.cnt, 0)::int,
 			COALESCE(sub_e.cnt, 0)::int,
 			(COALESCE(sub_e30.cnt, 0) * c.price)::float,
-			CASE WHEN c.published THEN 'published' ELSE 'draft' END
+			CASE WHEN c.published THEN 'published' ELSE 'draft' END,
+			c.preview_url
 		FROM courses c
 		JOIN categories cat ON c.category_id = cat.id
 		LEFT JOIN LATERAL (SELECT COUNT(*) AS cnt FROM lessons WHERE course_id = c.id) sub_l ON true
@@ -88,7 +89,7 @@ func (r *studioRepo) ListCourses(ctx context.Context, authorID int) ([]domain.St
 	var courses []domain.StudioCourse
 	for rows.Next() {
 		var sc domain.StudioCourse
-		if err := rows.Scan(&sc.ID, &sc.Title, &sc.Category, &sc.LessonsCount, &sc.StudentsCount, &sc.Revenue30d, &sc.Status); err != nil {
+		if err := rows.Scan(&sc.ID, &sc.Title, &sc.Category, &sc.LessonsCount, &sc.StudentsCount, &sc.Revenue30d, &sc.Status, &sc.PreviewURL); err != nil {
 			return nil, err
 		}
 		courses = append(courses, sc)
@@ -104,14 +105,14 @@ func (r *studioRepo) GetCourse(ctx context.Context, authorID, courseID int) (*do
 	err := r.pool.QueryRow(ctx, `
 		SELECT c.id, c.title, c.subtitle, c.description,
 			c.category_id, cat.name, c.level, c.price, c.old_price,
-			c.is_free, c.color_1, c.color_2, c.tag, c.published
+			c.is_free, c.color_1, c.color_2, c.tag, c.preview_url, c.published
 		FROM courses c
 		JOIN categories cat ON c.category_id = cat.id
 		WHERE c.id = $1 AND c.author_id = $2
 	`, courseID, authorID).Scan(
 		&d.ID, &d.Title, &d.Subtitle, &d.Description,
 		&d.CategoryID, &d.Category, &d.Level, &d.Price, &d.OldPrice,
-		&d.IsFree, &d.Color1, &d.Color2, &d.Tag, &d.Published,
+		&d.IsFree, &d.Color1, &d.Color2, &d.Tag, &d.PreviewURL, &d.Published,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -282,6 +283,9 @@ func (r *studioRepo) UpdateCourse(ctx context.Context, authorID, courseID int, r
 	}
 	if req.Tag != nil {
 		add("tag", *req.Tag)
+	}
+	if req.PreviewURL != nil {
+		add("preview_url", *req.PreviewURL)
 	}
 
 	if len(sets) > 0 {

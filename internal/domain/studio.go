@@ -10,6 +10,7 @@ type StudioCourse struct {
 	StudentsCount int     `json:"students_count"`
 	Revenue30d    float64 `json:"revenue_30d"`
 	Status        string  `json:"status"`
+	PreviewURL    *string `json:"preview_url,omitempty"`
 }
 
 type StudioCourseDetail struct {
@@ -26,6 +27,7 @@ type StudioCourseDetail struct {
 	Color1      string   `json:"color_1"`
 	Color2      string   `json:"color_2"`
 	Tag         *string  `json:"tag,omitempty"`
+	PreviewURL  *string  `json:"preview_url,omitempty"`
 	Published   bool     `json:"published"`
 	LearnItems  []string `json:"learn_items"`
 	Includes    []string `json:"includes"`
@@ -59,6 +61,7 @@ type UpdateCourseRequest struct {
 	Color1      *string   `json:"color_1"`
 	Color2      *string   `json:"color_2"`
 	Tag         *string   `json:"tag"`
+	PreviewURL  *string   `json:"preview_url"`
 	LearnItems  *[]string `json:"learn_items"`
 	Includes    *[]string `json:"includes"`
 }

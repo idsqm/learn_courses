@@ -29,6 +29,7 @@ type CourseListItem struct {
 	Color1        string   `json:"color_1"`
 	Color2        string   `json:"color_2"`
 	Tag           *string  `json:"tag,omitempty"`
+	PreviewURL    *string  `json:"preview_url,omitempty"`
 }
 
 type CourseDetail struct {
